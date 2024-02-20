@@ -1,0 +1,13 @@
+#
+# IMPORTANT: these configuration is only used for integration and unit testing purposes.
+# It should be overriden by your own application when using this library.
+#
+
+IG:
+  account_number: "XXXXX"
+  account_type: "DEMO" # LIVE / DEMO
+  api_key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  base_url_demo: "https://demo-api.ig.com/gateway/deal"
+  base_url_live: "https://api.ig.com/gateway/deal"
+  password: "your_password"
+  username: "your_username"
