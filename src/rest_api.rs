@@ -5,6 +5,8 @@ use serde_json::{json, Value};
 /// Struct to encapsulate the API and its configuration.
 #[derive(Clone, Debug)]
 pub struct RestApi {
+    /// The API base URL based on the account type.
+    pub base_url: String,
     /// The HTTP client for making requests.
     pub client: reqwest::Client,
     /// The API configuration.
@@ -18,11 +20,46 @@ pub struct RestApi {
 /// Provide an implementation for the Api struct.
 impl RestApi {
     pub fn new(config: ApiConfig) -> Self {
+        // Determine the API base URL based on the account type.
+        let base_url = match config.account_type {
+            AccountType::Demo => config.base_url_demo.clone(),
+            AccountType::Live => config.base_url_live.clone(),
+        };
         Self {
+            base_url,
             client: reqwest::Client::new(),
             config,
             cst: None,
             x_security_token: None,
+        }
+    }
+
+    /// Get session details for the current session.
+    pub async fn get_session(&self) -> Result<Value, ApiError> {
+        // Send the session details request.
+        let response = self
+            .client
+            .get(&format!("{}/session", &self.base_url))
+            .header("Accept", "application/json; charset=UTF-8")
+            .header("Content-Type", "application/json; charset=UTF-8")
+            .header("CST", self.cst.as_ref().unwrap_or(&"".to_string()))
+            .header("Version", "1")
+            .header("X-IG-API-KEY", &self.config.api_key)
+            .header(
+                "X-SECURITY-TOKEN",
+                self.x_security_token.as_ref().unwrap_or(&"".to_string()),
+            )
+            .send()
+            .await?;
+
+        // Check the response status code.
+        match response.status() {
+            // If the status code is 200 OK, return the JSON body.
+            StatusCode::OK => Ok(response.json().await?),
+            // If the status code is not 200 OK, return an error.
+            _ => Err(ApiError {
+                message: format!("Get session details failed with status code: {}", response.status()),
+            }),
         }
     }
 
@@ -34,16 +71,10 @@ impl RestApi {
             "password": self.config.password.clone(),
         });
 
-        // Determine the API URL based on the account type.
-        let api_url = match self.config.account_type {
-            AccountType::Demo => &self.config.base_url_demo,
-            AccountType::Live => &self.config.base_url_live,
-        };
-
         // Send the login request.
         let response = self
             .client
-            .post(&format!("{}/session", api_url))
+            .post(&format!("{}/session", &self.base_url))
             .json(&login_request)
             .header("Accept", "application/json; charset=UTF-8")
             .header("Content-Type", "application/json; charset=UTF-8")
@@ -95,16 +126,10 @@ impl RestApi {
 
     /// Log out of the IG API.
     pub async fn logout(&self) -> Result<(), ApiError> {
-        // Determine the API URL based on the account type.
-        let api_url = match self.config.account_type {
-            AccountType::Demo => &self.config.base_url_demo,
-            AccountType::Live => &self.config.base_url_live,
-        };
-
         // Send the logout request.
         let response = self
             .client
-            .delete(&format!("{}/session", api_url))
+            .delete(&format!("{}/session", &self.base_url))
             .header("Accept", "application/json; charset=UTF-8")
             .header("Content-Type", "application/json; charset=UTF-8")
             .header("CST", self.cst.as_ref().unwrap_or(&"".to_string()))
