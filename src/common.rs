@@ -1,8 +1,8 @@
 use chrono::{NaiveDate, ParseError};
 use reqwest::header::HeaderMap;
-use serde::{de, Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
+use serde_json::{from_value, to_string, Value};
 use serde_path_to_error::deserialize;
-use serde_json::{Value, from_value, to_string};
 use std::collections::HashMap;
 use std::fs;
 use std::str::FromStr;
@@ -66,8 +66,11 @@ pub struct ApiConfig {
 impl Default for ApiConfig {
     fn default() -> Self {
         let config_contents = fs::read_to_string("config.yaml").unwrap();
-        let config: HashMap<String, serde_yaml::Value> = serde_yaml::from_str(&config_contents).unwrap();
-        let api_config_value = config.get("IG").expect("IG value not found in config file!");
+        let config: HashMap<String, serde_yaml::Value> =
+            serde_yaml::from_str(&config_contents).unwrap();
+        let api_config_value = config
+            .get("IG")
+            .expect("IG value not found in config file!");
         let api_config: ApiConfig = serde_yaml::from_value(api_config_value.clone()).unwrap();
 
         api_config

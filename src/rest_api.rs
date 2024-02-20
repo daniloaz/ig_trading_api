@@ -1,6 +1,6 @@
 use crate::common::*;
 use reqwest::StatusCode;
-use serde_json::{from_value, json, to_string, Value};
+use serde_json::{json, Value};
 
 /// Struct to encapsulate the API and its configuration.
 #[derive(Clone, Debug)]
@@ -61,11 +61,13 @@ impl RestApi {
                 json["headers"] = headers;
 
                 // Get CST and X-SECURITY-TOKEN from the login response.
-                let cst: Option<String> = json.get("headers")
+                let cst: Option<String> = json
+                    .get("headers")
                     .and_then(|h| h.get("cst"))
                     .and_then(|cst| cst.as_str())
                     .map(|s| s.to_string());
-                let x_security_token: Option<String> = json.get("headers")
+                let x_security_token: Option<String> = json
+                    .get("headers")
                     .and_then(|h| h.get("x-security-token"))
                     .and_then(|token| token.as_str())
                     .map(|s| s.to_string());
@@ -77,12 +79,13 @@ impl RestApi {
                 // If the CST and X-SECURITY-TOKEN values are not present, return an error.
                 if self.cst.is_none() || self.x_security_token.is_none() {
                     return Err(ApiError {
-                        message: "CST and X-SECURITY-TOKEN not found in login response headers.".to_string(),
+                        message: "CST and X-SECURITY-TOKEN not found in login response headers."
+                            .to_string(),
                     });
                 }
 
                 Ok(json)
-            },
+            }
             // If the status code is not 200 OK, return an error.
             _ => Err(ApiError {
                 message: format!("Login failed with status code: {}", response.status()),
@@ -107,7 +110,10 @@ impl RestApi {
             .header("CST", self.cst.as_ref().unwrap_or(&"".to_string()))
             .header("Version", "1")
             .header("X-IG-API-KEY", &self.config.api_key)
-            .header("X-SECURITY-TOKEN", self.x_security_token.as_ref().unwrap_or(&"".to_string()))
+            .header(
+                "X-SECURITY-TOKEN",
+                self.x_security_token.as_ref().unwrap_or(&"".to_string()),
+            )
             .send()
             .await?;
 
@@ -121,5 +127,4 @@ impl RestApi {
             }),
         }
     }
-
 }
