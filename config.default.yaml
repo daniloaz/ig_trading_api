@@ -3,11 +3,13 @@
 # It should be overriden by your own application when using this library.
 #
 
-IG:
+ig_trading_api:
   account_number: "XXXXX"
-  account_type: "DEMO" # LIVE / DEMO
   api_key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  auto_login: true
   base_url_demo: "https://demo-api.ig.com/gateway/deal"
   base_url_live: "https://api.ig.com/gateway/deal"
+  execution_environment: "DEMO" # LIVE / DEMO
   password: "your_password"
+  session_version: 2
   username: "your_username"
