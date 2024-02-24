@@ -80,7 +80,7 @@ async fn get_session_works() {
 }
 
 #[tokio::test]
-async fn logout_works() {
+async fn delete_session_works() {
     // Get the API instance.
     let api = initialize_rest_api().await;
     println!("API instance: {:?}", api);

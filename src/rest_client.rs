@@ -35,7 +35,7 @@ pub struct RestClient {
 /// Implementation for the RestClient struct.
 impl RestClient {
     /// Send a DELETE request to the API.
-    pub async fn delete(&self, method: String) -> Result<(HeaderMap, Value), ApiError> {
+    pub async fn delete(&self, method: String) -> Result<(HeaderMap, ()), ApiError> {
         // Default API version is 1.
         let api_version: usize = 1;
 
@@ -51,7 +51,7 @@ impl RestClient {
         // Check the response status code.
         match response.status() {
             // If the status code is 204 No Content, return success.
-            StatusCode::NO_CONTENT => Ok((response.headers().clone(), response.json().await?)),
+            StatusCode::NO_CONTENT => Ok((response.headers().clone(), ())),
             // If the status code is not 204 No Content, return an error.
             _ => Err(ApiError {
                 message: format!(
@@ -140,6 +140,7 @@ impl RestClient {
 
     /// Log in to the IG REST API.
     pub async fn login(&mut self) -> Result<Value, Box<dyn Error>> {
+        println!("Logging in with session version: {}", self.session_version);
         match self.session_version {
             //1 => Ok(self.login_v1().await?),
             2 => Ok(self.login_v2().await?),
