@@ -759,14 +759,14 @@ pub struct Session {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct LoginReq {
+pub struct LoginRequest {
 	pub identifier: String,
 	pub password: String,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct LoginRes {
+pub struct LoginResponseV3 {
 	pub account_id: String,
 	pub client_id: String,
 	pub lightstreamer_endpoint: String,
@@ -782,8 +782,6 @@ pub struct OauthToken {
 	pub scope: String,
 	pub token_type: String
 }
-
-
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]

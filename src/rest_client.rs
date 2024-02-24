@@ -1,6 +1,7 @@
 use crate::common::{
-    params_to_json, params_to_query_string, ApiConfig, ApiError, ExecutionEnvironment,
+    deserialize, params_to_json, params_to_query_string, ApiConfig, ApiError, ExecutionEnvironment,
 };
+use crate::rest_models::{LoginRequest, LoginResponseV3};
 //use crate::rest_models::OauthToken;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::StatusCode;
@@ -143,9 +144,8 @@ impl RestClient {
         println!("Logging in with session version: {}", self.session_version);
 
         match self.session_version {
-            //1 => Ok(self.login_v1().await?),
-            2 => Ok(self.login_v2().await?),
-            //3 => Ok(self.login_v3().await?),
+            1 | 2 => Ok(self.login_v2().await?),
+            3 => Ok(self.login_v3().await?),
             _ => Err(Box::new(ApiError {
                 message: format!("Invalid session version: {}", self.session_version),
             })),
@@ -155,16 +155,16 @@ impl RestClient {
     /// Log in to the IG REST API using session version 2.
     pub async fn login_v2(&mut self) -> Result<Value, Box<dyn Error>> {
         // Create the login request body.
-        let body = json!({
-            "identifier": self.config.username.clone(),
-            "password": self.config.password.clone(),
-        });
+        let login_request_body = LoginRequest {
+            identifier: self.config.username.clone(),
+            password: self.config.password.clone(),
+        };
 
         // Send the login request.
         let response = self
             .client
             .post(&format!("{}/session", &self.base_url))
-            .json(&body)
+            .json(&login_request_body)
             .headers(self.common_headers.clone())
             .header("Version", "2")
             .send()
@@ -186,7 +186,7 @@ impl RestClient {
                     );
                 }
 
-                // If any of the auth_headers exist, return an error.
+                // If any of the auth_headers doesn't exist, return an error.
                 if auth_headers.get("cst").is_none()
                     || auth_headers.get("x-security-token").is_none()
                 {
@@ -200,6 +200,54 @@ impl RestClient {
                 self.auth_headers = Some(auth_headers);
 
                 Ok(response.json().await?)
+            }
+            // If the status code is not 200 OK, return an error.
+            _ => Err(Box::new(ApiError {
+                message: format!("Login failed with status code: {}", response.status()),
+            })),
+        }
+    }
+
+    /// Log in to the IG REST API using session version 2.
+    pub async fn login_v3(&mut self) -> Result<Value, Box<dyn Error>> {
+        // Create the login request body.
+        let login_request_body = LoginRequest {
+            identifier: self.config.username.clone(),
+            password: self.config.password.clone(),
+        };
+
+        // Send the login request.
+        let response = self
+            .client
+            .post(&format!("{}/session", &self.base_url))
+            .json(&login_request_body)
+            .headers(self.common_headers.clone())
+            .header("Version", "3")
+            .send()
+            .await?;
+
+        // Check the response status code.
+        match response.status() {
+            // If the status code is 200 OK, return the JSON body plus headers.
+            StatusCode::OK => {
+                // Deserialize the response body to a LoginResponseV3.
+                let response_body = response.json().await?;
+                let login_response: LoginResponseV3 = deserialize(&response_body)?;
+
+                // Get access_token from the login response and set it as the Bearer token in Authorization header.
+                let mut auth_headers = HeaderMap::new();
+                auth_headers.insert(
+                    "Authorization",
+                    HeaderValue::from_str(&format!("Bearer {}", login_response.oauth_token.access_token))?,
+                );
+                auth_headers.insert(
+                    "IG-ACCOUNT-ID",
+                    HeaderValue::from_str(&self.config.account_number)?,
+                );
+
+                self.auth_headers = Some(auth_headers);
+
+                Ok(response_body)
             }
             // If the status code is not 200 OK, return an error.
             _ => Err(Box::new(ApiError {

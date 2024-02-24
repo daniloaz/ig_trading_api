@@ -51,6 +51,7 @@ fn sleep() {
 async fn aaa_rest_api_is_properly_initialized() {
     // Get the API instance.
     let api = get_or_init_rest_api().await;
+    println!("API instance: {:?}", api);
 
     // First check if auth headers are set.
     assert!(api.client.auth_headers.is_some());
@@ -97,7 +98,24 @@ async fn aaa_rest_api_is_properly_initialized() {
                 assert!(re.is_match(security_token_value));
             }
             3 => {
-                todo!("Implement tests for session version 3.");
+                assert!(api
+                    .client
+                    .auth_headers
+                    .as_ref()
+                    .unwrap()
+                    .contains_key("authorization"));
+
+                let authorization_value = api
+                    .client
+                    .auth_headers
+                    .as_ref()
+                    .unwrap()
+                    .get("authorization")
+                    .unwrap()
+                    .to_str()
+                    .unwrap();
+                let re = regex::Regex::new(r"^Bearer [0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$").unwrap();
+                assert!(re.is_match(authorization_value));
             }
             _ => panic!("Invalid session version: {}", session_version),
         }
