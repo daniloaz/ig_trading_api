@@ -69,6 +69,10 @@ pub struct ApiConfig {
 /// Load the API configuration from the config value within the configuration file.
 impl Default for ApiConfig {
     fn default() -> Self {
+        // Panic if the config file is not found.
+        if !std::path::Path::new("config.yaml").exists() {
+            panic!("config.yaml file not found!");
+        }
         let config_contents = fs::read_to_string("config.yaml").unwrap();
         let config: HashMap<String, serde_yaml::Value> =
             serde_yaml::from_str(&config_contents).unwrap();
@@ -86,34 +90,6 @@ impl Default for ApiConfig {
 pub struct ApiError {
     /// The error message.
     pub message: String,
-}
-
-/// Implement the `From<reqwest::Error>` trait for ApiError.
-impl From<reqwest::Error> for ApiError {
-    /// Convert reqwest::Error to ApiError
-    fn from(error: reqwest::Error) -> Self {
-        ApiError {
-            message: format!("Request failed: {}", error),
-        }
-    }
-}
-
-/// Implement the `From<serde_json::Error>` trait for ApiError.
-impl From<serde_json::Error> for ApiError {
-    /// Convert serde_json::Error to ApiError
-    fn from(error: serde_json::Error) -> Self {
-        ApiError {
-            message: format!("JSON Error: {}", error.to_string()),
-        }
-    }
-}
-
-/// Implement the `From<String>` trait for ApiError.
-impl From<String> for ApiError {
-    /// Convert String to ApiError
-    fn from(s: String) -> Self {
-        ApiError { message: s }
-    }
 }
 
 /// Implement the Display trait for ApiError to provide custom string representation.
@@ -153,7 +129,7 @@ pub fn params_to_query_string(params: Option<HashMap<String, String>>) -> String
     query_string
 }
 
-/// Convert a HashMap of parameters to a JSON Value.
+/// Convert a HashMap of parameters to a JSON serde_json::Value.
 pub fn params_to_json(params: Option<HashMap<String, String>>) -> Value {
     let mut map = serde_json::Map::new();
 
@@ -168,7 +144,7 @@ pub fn params_to_json(params: Option<HashMap<String, String>>) -> Value {
     Value::Object(map)
 }
 
-/// Convert a HeaderMap to a JSON Value.
+/// Convert a HeaderMap to a JSON serde_json::Value.
 pub fn headers_to_json(headers: &HeaderMap) -> Result<Value, Box<dyn Error>> {
     let mut map = serde_json::Map::new();
 

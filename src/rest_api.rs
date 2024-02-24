@@ -34,7 +34,7 @@ impl RestApi {
             .get("session".to_string(), Some(1), params)
             .await?;
 
-        // Convert header_map to json
+        // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
         // Convert the serde_json::Value response to Session model.
         let session: Session = serde_json::from_value(response_value)?;
@@ -50,7 +50,7 @@ impl RestApi {
             .delete("session".to_string())
             .await?;
 
-        // Convert header_map to json
+        // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
 
         Ok((headers, ()))

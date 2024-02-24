@@ -35,7 +35,7 @@ pub struct RestClient {
 /// Implementation for the RestClient struct.
 impl RestClient {
     /// Send a DELETE request to the API.
-    pub async fn delete(&self, method: String) -> Result<(HeaderMap, ()), ApiError> {
+    pub async fn delete(&self, method: String) -> Result<(HeaderMap, ()), Box<dyn Error>> {
         // Default API version is 1.
         let api_version: usize = 1;
 
@@ -53,13 +53,13 @@ impl RestClient {
             // If the status code is 204 No Content, return success.
             StatusCode::NO_CONTENT => Ok((response.headers().clone(), ())),
             // If the status code is not 204 No Content, return an error.
-            _ => Err(ApiError {
+            _ => Err(Box::new(ApiError {
                 message: format!(
                     "DELETE operation using method '{}' failed with status code: {}",
                     method,
                     response.status()
                 ),
-            }),
+            })),
         }
     }
 
@@ -107,7 +107,7 @@ impl RestClient {
         method: String,
         api_version: Option<usize>,
         params: Option<HashMap<String, String>>,
-    ) -> Result<(HeaderMap, Value), ApiError> {
+    ) -> Result<(HeaderMap, Value), Box<dyn Error>> {
         // Default API version is 1.
         let api_version = api_version.unwrap_or(1).to_string();
         // Convert the params to a query string.
@@ -127,14 +127,14 @@ impl RestClient {
             // If the status code is 200 OK, return the JSON body.
             StatusCode::OK => Ok((response.headers().clone(), response.json().await?)),
             // If the status code is not 200 OK, return an error.
-            _ => Err(ApiError {
+            _ => Err(Box::new(ApiError {
                 message: format!(
                     "GET operation using method '{}' and query_string '{}' failed with status code: {}",
                     method,
                     query_string,
                     response.status()
                 ),
-            }),
+            })),
         }
     }
 
@@ -214,7 +214,7 @@ impl RestClient {
         method: String,
         version: Option<usize>,
         params: Option<HashMap<String, String>>,
-    ) -> Result<(HeaderMap, Value), ApiError> {
+    ) -> Result<(HeaderMap, Value), Box<dyn Error>> {
         // Default API version is 1.
         let version = version.unwrap_or(1).to_string();
         // Convert the params to a serde_json::Value.
@@ -234,7 +234,7 @@ impl RestClient {
             // If the status code is 200 OK, return the JSON body.
             StatusCode::OK => Ok((response.headers().clone(), response.json().await?)),
             // If the status code is not 200 OK, return an error.
-            _ => Err(ApiError {
+            _ => Err(Box::new(ApiError {
                 message: format!(
                     "POST operation using method '{}', version '{}' and body '{:?}' failed with status code: {}",
                     method,
@@ -242,7 +242,7 @@ impl RestClient {
                     body,
                     response.status()
                 ),
-            }),
+            })),
         }
     }
 }
