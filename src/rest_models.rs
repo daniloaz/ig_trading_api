@@ -746,7 +746,7 @@ pub struct UpdateApplication {
 	pub status: ApplicationStatus
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Session {
 	pub account_id: String,

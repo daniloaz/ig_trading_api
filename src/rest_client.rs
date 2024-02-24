@@ -256,11 +256,11 @@ mod tests {
         let config = ApiConfig {
             account_number: "test_account_number".to_string(),
             api_key: "test_api_key".to_string(),
-            auto_login: Some(true),
+            auto_login: Some(false),
             execution_environment: ExecutionEnvironment::Demo,
             base_url_demo: "https://demo.example.com".to_string(),
             base_url_live: "https://live.example.com".to_string(),
-            session_version: Some(1),
+            session_version: Some(2),
             password: "test_password".to_string(),
             username: "test_username".to_string(),
         };
@@ -270,7 +270,7 @@ mod tests {
 
         // Make assertions about the returned `RestClient` object
         assert_eq!(rest_client.auth_headers, None);
-        assert_eq!(rest_client.auto_login, true);
+        assert_eq!(rest_client.auto_login, false);
         assert_eq!(rest_client.base_url, "https://demo.example.com");
         assert_eq!(
             rest_client.common_headers.get("X-IG-API-KEY").unwrap(),
@@ -278,16 +278,16 @@ mod tests {
         );
         assert_eq!(rest_client.config.account_number, "test_account_number");
         assert_eq!(rest_client.config.api_key, "test_api_key");
-        assert_eq!(rest_client.config.auto_login, Some(true));
+        assert_eq!(rest_client.config.auto_login, Some(false));
         assert_eq!(
             rest_client.config.execution_environment,
             ExecutionEnvironment::Demo
         );
         assert_eq!(rest_client.config.base_url_demo, "https://demo.example.com");
         assert_eq!(rest_client.config.base_url_live, "https://live.example.com");
-        assert_eq!(rest_client.config.session_version, Some(1));
+        assert_eq!(rest_client.config.session_version, Some(2));
         assert_eq!(rest_client.config.password, "test_password");
         assert_eq!(rest_client.config.username, "test_username");
-        assert_eq!(rest_client.session_version, 1);
+        assert_eq!(rest_client.session_version, 2);
     }
 }
