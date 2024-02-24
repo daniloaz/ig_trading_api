@@ -107,6 +107,23 @@ impl std::error::Error for ApiError {}
 /// UTILITY FUNCTIONS
 ///
 
+/// Improved deserialization function that provides better error messages using serde_path_to_error.
+pub fn deserialize<'de, T>(value: &'de Value) -> Result<T, Box<dyn Error>>
+where
+    T: Deserialize<'de>,
+{
+    // Deserialize the value using serde_path_to_error.
+    let result = serde_path_to_error::deserialize(value);
+
+    // Return the result.
+    match result {
+        Ok(value) => Ok(value),
+        Err(e) => Err(Box::new(ApiError {
+            message: format!("Failed to deserialize JSON serde_json::Value: {}", e),
+        })),
+    }
+}
+
 /// Convert a HashMap of parameters to a query string for use in a URL.
 pub fn params_to_query_string(params: Option<HashMap<String, String>>) -> String {
     let mut query_string = "".to_string();

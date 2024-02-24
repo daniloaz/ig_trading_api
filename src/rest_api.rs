@@ -37,7 +37,7 @@ impl RestApi {
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
         // Convert the serde_json::Value response to Session model.
-        let session: Session = serde_json::from_value(response_value)?;
+        let session: Session = deserialize(&response_value)?;
 
         Ok((headers, session))
     }
