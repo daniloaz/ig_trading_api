@@ -31,6 +31,22 @@ pub enum AccountType {
 	Spreadbet
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountSwitchRequest {
+	pub account_id: String,
+	pub default_account: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountSwitchResponse {
+	pub dealing_enabled: String,
+	pub has_active_demo_accounts: bool,
+	pub has_active_live_accounts: bool,
+	pub trailing_stops_enabled: bool,
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Balance {

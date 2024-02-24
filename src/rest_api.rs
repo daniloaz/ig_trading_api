@@ -23,6 +23,20 @@ impl RestApi {
         })
     }
 
+    /// Log out of the IG API by deleting the current session.
+    pub async fn delete_session(&self) -> Result<(Value, ()), Box<dyn Error>> {
+        // Send the request to the REST client.
+        let (header_map, _) = self
+            .client
+            .delete("session".to_string())
+            .await?;
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+
+        Ok((headers, ()))
+    }
+
     /// Get session details for the current session.
     pub async fn get_session(
         &self,
@@ -42,17 +56,21 @@ impl RestApi {
         Ok((headers, session))
     }
 
-    /// Log out of the IG API by deleting the current session.
-    pub async fn delete_session(&self) -> Result<(Value, ()), Box<dyn Error>> {
+    pub async fn put_session(
+        &self,
+        body: &AccountSwitchRequest,
+    ) -> Result<(Value, AccountSwitchResponse), Box<dyn Error>> {
         // Send the request to the REST client.
-        let (header_map, _) = self
+        let (header_map, response_value) = self
             .client
-            .delete("session".to_string())
+            .put("session".to_string(), body, Some(1))
             .await?;
 
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
+        // Deserialize the response_value to AccountSwitchResponse.
+        let account_switch_response: AccountSwitchResponse = deserialize(&response_value)?;
 
-        Ok((headers, ()))
+        Ok((headers, account_switch_response))
     }
 }

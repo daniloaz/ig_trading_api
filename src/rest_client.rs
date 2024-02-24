@@ -5,6 +5,7 @@ use crate::rest_models::{LoginRequest, LoginResponseV3};
 //use crate::rest_models::OauthToken;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::StatusCode;
+use serde::Serialize;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::error::Error;
@@ -240,9 +241,15 @@ impl RestClient {
                     "Authorization",
                     HeaderValue::from_str(&format!("Bearer {}", login_response.oauth_token.access_token))?,
                 );
+
+                let account_number = match self.config.execution_environment {
+                    ExecutionEnvironment::Demo => self.config.account_number_demo.clone(),
+                    ExecutionEnvironment::Live => self.config.account_number_live.clone(),
+                };
+
                 auth_headers.insert(
                     "IG-ACCOUNT-ID",
-                    HeaderValue::from_str(&self.config.account_number)?,
+                    HeaderValue::from_str(&account_number)?,
                 );
 
                 self.auth_headers = Some(auth_headers);
@@ -293,6 +300,44 @@ impl RestClient {
             })),
         }
     }
+
+    /// Send a PUT request to the IG REST API.
+    pub async fn put(
+        &self,
+        method: String,
+        body: impl Serialize,
+        version: Option<usize>,
+    ) -> Result<(HeaderMap, Value), Box<dyn Error>> {
+        // Default API version is 1.
+        let version = version.unwrap_or(1).to_string();
+
+        // Send the PUT request.
+        let response = self
+            .client
+            .put(&format!("{}/{}", &self.base_url, method))
+            .json(&body)
+            .headers(self.auth_headers.clone().unwrap_or(HeaderMap::new()))
+            .headers(self.common_headers.clone())
+            .header("Version", version.clone())
+            .send()
+            .await?;
+
+        // Check the response status code.
+        match response.status() {
+            // If the status code is 200 OK, return the JSON body.
+            StatusCode::OK => Ok((response.headers().clone(), response.json().await?)),
+            // If the status code is not 200 OK, return an error.
+            _ => Err(Box::new(ApiError {
+                message: format!(
+                    "PUT operation using method '{}', version '{}' and body '{:?}' failed with status code: {}",
+                    method,
+                    version,
+                    serde_json::to_string(&body)?,
+                    response.status()
+                ),
+            })),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -304,7 +349,8 @@ mod tests {
     async fn new_rest_client_works() {
         // Create a mock API configuration
         let config = ApiConfig {
-            account_number: "test_account_number".to_string(),
+            account_number_demo: "test_account_number_demo".to_string(),
+            account_number_live: "test_account_number_live".to_string(),
             api_key: "test_api_key".to_string(),
             auto_login: Some(false),
             execution_environment: ExecutionEnvironment::Demo,
@@ -326,7 +372,8 @@ mod tests {
             rest_client.common_headers.get("X-IG-API-KEY").unwrap(),
             "test_api_key"
         );
-        assert_eq!(rest_client.config.account_number, "test_account_number");
+        assert_eq!(rest_client.config.account_number_demo, "test_account_number_demo");
+        assert_eq!(rest_client.config.account_number_live, "test_account_number_live");
         assert_eq!(rest_client.config.api_key, "test_api_key");
         assert_eq!(rest_client.config.auto_login, Some(false));
         assert_eq!(

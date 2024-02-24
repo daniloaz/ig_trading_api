@@ -46,8 +46,10 @@ impl FromStr for ExecutionEnvironment {
 /// Struct to hold IG API configuration data.
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct ApiConfig {
-    /// Your IG account number.
-    pub account_number: String,
+    /// Your demo IG account number.
+    pub account_number_demo: String,
+    /// Your live IG account number.
+    pub account_number_live: String,
     /// The API key assigned to your IG account.
     pub api_key: String,
     /// Automatically log in to the API on instantiation and when the session expires.

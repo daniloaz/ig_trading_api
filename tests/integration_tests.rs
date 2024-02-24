@@ -1,4 +1,5 @@
 use ig_trading_api::common::*;
+use ig_trading_api::rest_models::*;
 use ig_trading_api::rest_api::*;
 use regex::Regex;
 use std::sync::Arc;
@@ -135,6 +136,41 @@ async fn get_session_works() {
         Ok(response) => response,
         Err(e) => {
             println!("Error getting session details: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response.0).unwrap()
+    );
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response.1).unwrap()
+    );
+
+    sleep();
+}
+
+#[tokio::test]
+async fn put_session_works() {
+    // Get the API instance.
+    let api = get_or_init_rest_api().await;
+
+    let new_account_number = match api.config.execution_environment {
+        ExecutionEnvironment::Demo => api.config.account_number_live.clone(),
+        ExecutionEnvironment::Live => api.config.account_number_demo.clone(),
+    };
+
+    let body = AccountSwitchRequest {
+        account_id: new_account_number.clone(),
+        default_account: None,
+    };
+
+    let response = match api.put_session(&body).await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error switching session to account '{}': {:?}", new_account_number, e);
             panic!("Test failed due to error.");
         }
     };

@@ -4,7 +4,8 @@
 #
 
 ig_trading_api:
-  account_number: "XXXXX"
+  account_number_demo: "XXXXX"
+  account_number_live: "XXXXX"
   api_key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
   auto_login: true
   base_url_demo: "https://demo-api.ig.com/gateway/deal"
