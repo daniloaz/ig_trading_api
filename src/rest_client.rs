@@ -141,6 +141,7 @@ impl RestClient {
     /// Log in to the IG REST API.
     pub async fn login(&mut self) -> Result<Value, Box<dyn Error>> {
         println!("Logging in with session version: {}", self.session_version);
+
         match self.session_version {
             //1 => Ok(self.login_v1().await?),
             2 => Ok(self.login_v2().await?),

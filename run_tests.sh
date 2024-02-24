@@ -17,7 +17,7 @@ function print_help {
     echo "Options:"
     echo "-h, --help            Show help"
     echo "-v, --verbose         Enable verbose mode"
-    echo "-s, --sleep INTERVAL  Set the sleep interval (default is 3)"
+    echo "-s, --sleep INTERVAL  Set the sleep interval (default is ${sleep_interval} seconds)"
     echo "-u, --unit            Run only unit tests"
     echo "-i, --integration     Run only integration tests"
     echo "-a, --all             Run all tests (default)"
@@ -27,38 +27,38 @@ function print_help {
 # Parse command line options.
 while getopts "hvs:uia" opt; do
     case ${opt} in
-        h)
-            print_help
-            ;;
-        v)
-            verbose=1
-            ;;
-        s)
-            sleep_interval=${OPTARG}
-            ;;
-        u)
-            run_unit=1
-            run_integration=0
-            ;;
-        i)
-            run_unit=0
-            run_integration=1
-            ;;
-        a)
-            run_unit=1
-            run_integration=1
-            ;;
-        \?)
-            echo "Invalid option: ${OPTARG}" 1>&2
-            print_help
-            ;;
-        :)
-            echo "Invalid option: ${OPTARG} requires an argument" 1>&2
-            print_help
-            ;;
+    h)
+        print_help
+        ;;
+    v)
+        verbose=1
+        ;;
+    s)
+        sleep_interval=${OPTARG}
+        ;;
+    u)
+        run_unit=1
+        run_integration=0
+        ;;
+    i)
+        run_unit=0
+        run_integration=1
+        ;;
+    a)
+        run_unit=1
+        run_integration=1
+        ;;
+    \?)
+        echo "Invalid option: ${OPTARG}" 1>&2
+        print_help
+        ;;
+    :)
+        echo "Invalid option: ${OPTARG} requires an argument" 1>&2
+        print_help
+        ;;
     esac
 done
-shift $((OPTIND -1))
+shift $((OPTIND - 1))
 
 # Run the unit tests if required.
 if [[ ${run_unit} -eq 1 ]]; then
@@ -70,18 +70,12 @@ if [[ ${run_unit} -eq 1 ]]; then
 fi
 
 # Run the integration tests if required.
+# RUN_TESTS_THREADS=1 is used to force the tests to run sequentially
+# and avoid rate limiting issues with the API.
 if [[ ${run_integration} -eq 1 ]]; then
-    # Get the list of all integration tests
-    integration_tests=$(cargo test -- --list | grep -v '::tests::' | grep ': test' | sed 's/: test$//g')
-
-    # Run each integration test individually with a sleep interval
-    for test in ${integration_tests}; do
-        [ $verbose -eq 1 ] && echo "Running test: ${test}"
-        if [[ $verbose -eq 1 ]]; then
-            cargo test ${test} -- --nocapture
-        else
-            cargo test ${test}
-        fi
-        sleep ${sleep_interval}
-    done
+    if [[ $verbose -eq 1 ]]; then
+        RUST_TEST_THREADS=1 RUST_TEST_DELAY=${sleep_interval} cargo test --test integration_tests -- --nocapture
+    else
+        RUST_TEST_THREADS=1 RUST_TEST_DELAY=${sleep_interval} cargo test --test integration_tests
+    fi
 fi
