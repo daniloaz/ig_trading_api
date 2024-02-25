@@ -5,6 +5,7 @@ edition = "2021"
 authors = ["Daniel López Azaña <daniloaz@gmail.com>"]
 description = "A Rust client for the REST and Streaming APIs from IG.com."
 license = "GPL-3.0-only"
+homepage = "https://www.daniloaz.com/en/"
 repository = "https://github.com/daniloaz/ig-trading-api"
 documentation = "https://github.com/daniloaz/ig-trading-api#readme"
 
