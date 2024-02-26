@@ -1,13 +1,19 @@
 use reqwest::header::HeaderMap;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
-//use serde_path_to_error::deserialize;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
 use std::str::FromStr;
 use std::string::ToString;
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// COMMON TYPES FOR BOTH THE REST AND STREAMING APIS.
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/// Enum to represent the execution environment (DEMO or LIVE).
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub enum ExecutionEnvironment {
     Demo,
@@ -43,7 +49,7 @@ impl FromStr for ExecutionEnvironment {
     }
 }
 
-/// Struct to hold IG API configuration data.
+/// Struct to hold IG API configuration data, both for the REST and streaming APIs.
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct ApiConfig {
     /// Your demo IG account number.
@@ -108,9 +114,11 @@ impl std::fmt::Display for ApiError {
 /// Implement the Error trait for ApiError to handle errors.
 impl std::error::Error for ApiError {}
 
-///
-/// UTILITY FUNCTIONS
-///
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// UTILITY FUNCTIONS.
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// Improved deserialization function that provides better error messages using serde_path_to_error.
 pub fn deserialize<'de, T>(value: &'de Value) -> Result<T, Box<dyn Error>>
@@ -129,23 +137,9 @@ where
     }
 }
 
+/// Convert a serializable object representing GET parameters to a query string.
 pub fn params_to_query_string<T: Serialize>(data: &T) -> Result<String, serde_urlencoded::ser::Error> {
     serde_urlencoded::to_string(data)
-}
-
-/// Convert a HashMap of parameters to a JSON serde_json::Value.
-pub fn params_to_json(params: Option<HashMap<String, String>>) -> Value {
-    let mut map = serde_json::Map::new();
-
-    if let Some(params) = params {
-        if !params.is_empty() {
-            for (key, value) in params {
-                map.insert(key, Value::String(value));
-            }
-        }
-    }
-
-    Value::Object(map)
 }
 
 /// Convert a HeaderMap to a JSON serde_json::Value.

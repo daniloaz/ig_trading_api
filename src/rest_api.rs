@@ -4,7 +4,8 @@ use crate::rest_models::*;
 use serde_json::Value;
 use std::error::Error;
 
-/// Struct to encapsulate the API and its configuration.
+/// Struct to encapsulate the API, including the REST HTTP client, the API configuration
+/// and all the methods to interact with the IG REST API.
 #[derive(Clone, Debug)]
 pub struct RestApi {
     /// The HTTP client for making requests.
@@ -13,8 +14,9 @@ pub struct RestApi {
     pub config: ApiConfig,
 }
 
-/// Provide an implementation for the Api struct.
+/// Provide an implementation for the Api struct with all the methods to interact with the IG REST API.
 impl RestApi {
+    /// Create a new instance of the RestApi struct based on the provided configuration.
     pub async fn new(config: ApiConfig) -> Result<Self, Box<dyn Error>> {
         Ok(Self {
             client: RestClient::new(config.clone()).await?,
@@ -25,10 +27,7 @@ impl RestApi {
     /// Log out of the IG API by deleting the current session.
     pub async fn delete_session(&self) -> Result<(Value, ()), Box<dyn Error>> {
         // Send the request to the REST client.
-        let (header_map, _) = self
-            .client
-            .delete("session".to_string())
-            .await?;
+        let (header_map, _) = self.client.delete("session".to_string()).await?;
 
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
@@ -40,7 +39,7 @@ impl RestApi {
     pub async fn get_session(
         &self,
         params: Option<SessionDetailsRequest>,
-    ) -> Result<(Value, SessionDetailsResponse), Box::<dyn Error>> {
+    ) -> Result<(Value, SessionDetailsResponse), Box<dyn Error>> {
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
@@ -55,7 +54,7 @@ impl RestApi {
         Ok((headers, session))
     }
 
-    /// This method will not be implemented as the login process is handled by the rest_client module.
+    /// This method is not implemented as the login process is handled by the rest_client module.
     pub async fn post_session() {
         unimplemented!("This method will not be implemented as the login process is handled by the rest_client module.");
     }

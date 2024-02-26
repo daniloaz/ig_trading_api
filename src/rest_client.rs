@@ -1,12 +1,9 @@
-use crate::common::{
-    deserialize, params_to_json, params_to_query_string, ApiConfig, ApiError, ExecutionEnvironment,
-};
+use crate::common::*;
 use crate::rest_models::{AuthenticationRequest, AuthenticationResponseV3};
-//use crate::rest_models::OauthToken;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::StatusCode;
 use serde::Serialize;
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::collections::HashMap;
 use std::error::Error;
 
@@ -268,16 +265,17 @@ impl RestClient {
         &self,
         method: String,
         version: Option<usize>,
-        params: Option<HashMap<String, String>>,
+        body: &impl Serialize,
     ) -> Result<(HeaderMap, Value), Box<dyn Error>> {
         // Default API version is 1.
         let version = version.unwrap_or(1).to_string();
-        // Convert the params to a serde_json::Value.
-        let body = params_to_json(params);
+        // Convert the body to a serde_json::Value.
+        let body = serde_json::to_value(body)?;
 
         let response = self
             .client
             .post(&format!("{}/{}", &self.base_url, method))
+            .json(&body)
             .headers(self.auth_headers.clone().unwrap_or(HeaderMap::new()))
             .headers(self.common_headers.clone())
             .header("Version", version.clone())
