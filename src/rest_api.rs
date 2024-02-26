@@ -56,6 +56,12 @@ impl RestApi {
         Ok((headers, session))
     }
 
+    /// This method will not be implemented as the login process is handled by the rest_client module.
+    pub async fn post_session() {
+        unimplemented!("This method will not be implemented as the login process is handled by the rest_client module.");
+    }
+
+    /// Switch to a different account by updating the current session.
     pub async fn put_session(
         &self,
         body: &AccountSwitchRequest,
