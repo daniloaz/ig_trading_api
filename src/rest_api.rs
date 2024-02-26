@@ -2,7 +2,6 @@ use crate::common::*;
 use crate::rest_client::*;
 use crate::rest_models::*;
 use serde_json::Value;
-use std::collections::HashMap;
 use std::error::Error;
 
 /// Struct to encapsulate the API and its configuration.
@@ -40,18 +39,18 @@ impl RestApi {
     /// Get session details for the current session.
     pub async fn get_session(
         &self,
-        params: Option<HashMap<String, String>>,
-    ) -> Result<(Value, Session), Box::<dyn Error>> {
+        params: Option<SessionDetailsRequest>,
+    ) -> Result<(Value, SessionDetailsResponse), Box::<dyn Error>> {
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
-            .get("session".to_string(), Some(1), params)
+            .get("session".to_string(), Some(1), &params)
             .await?;
 
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
         // Convert the serde_json::Value response to Session model.
-        let session: Session = deserialize(&response_value)?;
+        let session: SessionDetailsResponse = deserialize(&response_value)?;
 
         Ok((headers, session))
     }

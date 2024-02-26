@@ -25,6 +25,14 @@ pub struct Account {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum AccountStatus {
+	Disabled,
+	Enabled,
+	SuspendedFromDealing
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AccountType {
 	Cfd,
 	Physical,
@@ -47,6 +55,23 @@ pub struct AccountSwitchResponse {
 	pub trailing_stops_enabled: bool,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthenticationRequest {
+	pub identifier: String,
+	pub password: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthenticationResponseV3 {
+	pub account_id: String,
+	pub client_id: String,
+	pub lightstreamer_endpoint: String,
+	pub oauth_token: OauthToken,
+	pub timezone_offset: f64
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Balance {
@@ -54,14 +79,6 @@ pub struct Balance {
 	pub balance: f64,
 	pub deposit: f64,
 	pub profit_loss: f64
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum AccountStatus {
-	Disabled,
-	Enabled,
-	SuspendedFromDealing
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -762,31 +779,20 @@ pub struct UpdateApplication {
 	pub status: ApplicationStatus
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionDetailsRequest {
+	pub fetch_session_tokens: bool,
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Session {
+pub struct SessionDetailsResponse {
 	pub account_id: String,
 	pub client_id: String,
 	pub currency: String,
 	pub lightstreamer_endpoint: String,
 	pub locale: String,
-	pub timezone_offset: f64
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LoginRequest {
-	pub identifier: String,
-	pub password: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LoginResponseV3 {
-	pub account_id: String,
-	pub client_id: String,
-	pub lightstreamer_endpoint: String,
-	pub oauth_token: OauthToken,
 	pub timezone_offset: f64
 }
 

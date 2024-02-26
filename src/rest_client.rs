@@ -1,7 +1,7 @@
 use crate::common::{
     deserialize, params_to_json, params_to_query_string, ApiConfig, ApiError, ExecutionEnvironment,
 };
-use crate::rest_models::{LoginRequest, LoginResponseV3};
+use crate::rest_models::{AuthenticationRequest, AuthenticationResponseV3};
 //use crate::rest_models::OauthToken;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::StatusCode;
@@ -108,12 +108,12 @@ impl RestClient {
         &self,
         method: String,
         api_version: Option<usize>,
-        params: Option<HashMap<String, String>>,
+        params: &impl Serialize,
     ) -> Result<(HeaderMap, Value), Box<dyn Error>> {
         // Default API version is 1.
         let api_version = api_version.unwrap_or(1).to_string();
-        // Convert the params to a query string.
-        let query_string = params_to_query_string(params);
+        // Convert params to a query string.
+        let query_string = params_to_query_string(params)?;
 
         let response = self
             .client
@@ -156,7 +156,7 @@ impl RestClient {
     /// Log in to the IG REST API using session version 2.
     pub async fn login_v2(&mut self) -> Result<Value, Box<dyn Error>> {
         // Create the login request body.
-        let login_request_body = LoginRequest {
+        let login_request_body = AuthenticationRequest {
             identifier: self.config.username.clone(),
             password: self.config.password.clone(),
         };
@@ -212,7 +212,7 @@ impl RestClient {
     /// Log in to the IG REST API using session version 2.
     pub async fn login_v3(&mut self) -> Result<Value, Box<dyn Error>> {
         // Create the login request body.
-        let login_request_body = LoginRequest {
+        let login_request_body = AuthenticationRequest {
             identifier: self.config.username.clone(),
             password: self.config.password.clone(),
         };
@@ -233,7 +233,7 @@ impl RestClient {
             StatusCode::OK => {
                 // Deserialize the response body to a LoginResponseV3.
                 let response_body = response.json().await?;
-                let login_response: LoginResponseV3 = deserialize(&response_body)?;
+                let login_response: AuthenticationResponseV3 = deserialize(&response_body)?;
 
                 // Get access_token from the login response and set it as the Bearer token in Authorization header.
                 let mut auth_headers = HeaderMap::new();

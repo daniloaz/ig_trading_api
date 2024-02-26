@@ -129,26 +129,8 @@ where
     }
 }
 
-/// Convert a HashMap of parameters to a query string for use in a URL.
-pub fn params_to_query_string(params: Option<HashMap<String, String>>) -> String {
-    let mut query_string = "".to_string();
-
-    if let Some(params) = params {
-        if !params.is_empty() {
-            if query_string.is_empty() {
-                query_string.push('?');
-            }
-
-            for (key, value) in params {
-                query_string.push_str(&format!("{}={}&", key, value));
-            }
-
-            // Remove the trailing ampersand (&).
-            query_string.pop();
-        }
-    }
-
-    query_string
+pub fn params_to_query_string<T: Serialize>(data: &T) -> Result<String, serde_urlencoded::ser::Error> {
+    serde_urlencoded::to_string(data)
 }
 
 /// Convert a HashMap of parameters to a JSON serde_json::Value.

@@ -140,10 +140,33 @@ async fn get_session_works() {
     // Get the API instance.
     let api = get_or_init_rest_api().await;
 
+    // Test with no params.
     let response = match api.get_session(None).await {
         Ok(response) => response,
         Err(e) => {
-            println!("Error getting session details: {:?}", e);
+            println!("Error getting session details with no params: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response.0).unwrap()
+    );
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response.1).unwrap()
+    );
+
+    // Test with params.
+    let params = SessionDetailsRequest {
+        fetch_session_tokens: true,
+    };
+
+    let response = match api.get_session(Some(params)).await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error getting session details with params: {:?}", e);
             panic!("Test failed due to error.");
         }
     };
