@@ -4,12 +4,6 @@ use serde::ser::SerializeStruct;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Accounts {
-	pub accounts: Vec<Account>
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct Account {
 	pub account_alias: Option<String>,
 	pub account_id: String,
@@ -24,19 +18,17 @@ pub struct Account {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Accounts {
+	pub accounts: Vec<Account>
+}
+
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AccountStatus {
 	Disabled,
 	Enabled,
 	SuspendedFromDealing
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum AccountType {
-	Cfd,
-	Physical,
-	Spreadbet
 }
 
 #[derive(Debug, Serialize)]
@@ -53,6 +45,14 @@ pub struct AccountSwitchResponse {
 	pub has_active_demo_accounts: bool,
 	pub has_active_live_accounts: bool,
 	pub trailing_stops_enabled: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum AccountType {
+	Cfd,
+	Physical,
+	Spreadbet
 }
 
 #[derive(Debug, Serialize)]
@@ -779,29 +779,53 @@ pub struct UpdateApplication {
 	pub status: ApplicationStatus
 }
 
+/// User's session details request with optionally tokens.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionDetailsRequest {
+	/// Indicates whether to fetch session token headers.
 	pub fetch_session_tokens: bool,
 }
 
+/// User's session details response.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionDetailsResponse {
+	/// Active account identifier.
 	pub account_id: String,
+	/// Client identifier.
 	pub client_id: String,
+	/// Currency.
 	pub currency: String,
+	/// Lightstreamer endpoint.
 	pub lightstreamer_endpoint: String,
+	/// Locale.
 	pub locale: String,
+	/// Timezone offset relative to UTC (in hours).
 	pub timezone_offset: f64
 }
 
+/// The encryption key to use in order to send the user password in an encrypted form
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SessionEncryptionKeyResponse {
+	/// Encryption key in Base 64 format.
+	pub encryption_key: String,
+	/// Current timestamp in milliseconds since epoch.
+	pub timestamp: u64,
+}
+
+/// OAuth access token.
 #[derive(Debug, Deserialize)]
 pub struct OauthToken {
+	/// Access token.
 	pub access_token: String,
+	/// Access token expiry in seconds.
 	pub expires_in: String,
+	/// Refresh token.
 	pub refresh_token: String,
+	/// Scope of the access token.
 	pub scope: String,
+	/// Token type.
 	pub token_type: String
 }
 
