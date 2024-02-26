@@ -114,6 +114,10 @@ impl std::fmt::Display for ApiError {
 /// Implement the Error trait for ApiError to handle errors.
 impl std::error::Error for ApiError {}
 
+/// Struct to represent an empty object for use in optional parameters that must implement Serialize trait.
+#[derive(Serialize)]
+pub struct Empty {}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // UTILITY FUNCTIONS.

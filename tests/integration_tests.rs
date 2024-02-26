@@ -141,7 +141,7 @@ async fn get_session_works() {
     let api = get_or_init_rest_api().await;
 
     // Test with no params.
-    let response = match api.get_session(None).await {
+    let response = match api.session_get(None).await {
         Ok(response) => response,
         Err(e) => {
             println!("Error getting session details with no params: {:?}", e);
@@ -163,7 +163,7 @@ async fn get_session_works() {
         fetch_session_tokens: true,
     };
 
-    let response = match api.get_session(Some(params)).await {
+    let response = match api.session_get(Some(params)).await {
         Ok(response) => response,
         Err(e) => {
             println!("Error getting session details with params: {:?}", e);
@@ -201,7 +201,7 @@ async fn put_session_works() {
         default_account: None,
     };
 
-    let response = match api.put_session(&body).await {
+    let response = match api.session_put(&body).await {
         Ok(response) => response,
         Err(e) => {
             println!(
@@ -231,7 +231,7 @@ async fn zzz_delete_session_works() {
     // Get the API instance.
     let api = get_or_init_rest_api().await;
 
-    let response = match api.delete_session().await {
+    let response = match api.session_delete().await {
         Ok(response) => response,
         Err(e) => {
             println!("Error getting session details: {:?}", e);

@@ -4,7 +4,6 @@ use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::StatusCode;
 use serde::Serialize;
 use serde_json::Value;
-use std::collections::HashMap;
 use std::error::Error;
 
 /// Default session version if not explicitly set.
@@ -105,7 +104,7 @@ impl RestClient {
         &self,
         method: String,
         api_version: Option<usize>,
-        params: &impl Serialize,
+        params: &Option<impl Serialize>,
     ) -> Result<(HeaderMap, Value), Box<dyn Error>> {
         // Default API version is 1.
         let api_version = api_version.unwrap_or(1).to_string();

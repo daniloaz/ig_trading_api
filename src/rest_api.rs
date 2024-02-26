@@ -24,8 +24,14 @@ impl RestApi {
         })
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //
+    // SESSION METHODS.
+    //
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     /// Log out of the IG API by deleting the current session.
-    pub async fn delete_session(&self) -> Result<(Value, ()), Box<dyn Error>> {
+    pub async fn session_delete(&self) -> Result<(Value, ()), Box<dyn Error>> {
         // Send the request to the REST client.
         let (header_map, _) = self.client.delete("session".to_string()).await?;
 
@@ -35,8 +41,27 @@ impl RestApi {
         Ok((headers, ()))
     }
 
+    /// Creates a trading session, obtaining session tokens for subsequent API access.
+    /// Please note, region-specific login restrictions may apply.
+    pub async fn session_encryption_key_get(
+        &self,
+    ) -> Result<(Value, SessionEncryptionKeyResponse), Box<dyn Error>> {
+        // Send the request to the REST client.
+        let (header_map, response_value) = self
+            .client
+            .get("session/encryptionKey".to_string(), Some(1), &None::<Empty>)
+            .await?;
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+        // Deserialize the response_value to EncryptionKeyResponse.
+        let encryption_key_response: SessionEncryptionKeyResponse = deserialize(&response_value)?;
+
+        Ok((headers, encryption_key_response))
+    }
+
     /// Get session details for the current session.
-    pub async fn get_session(
+    pub async fn session_get(
         &self,
         params: Option<SessionDetailsRequest>,
     ) -> Result<(Value, SessionDetailsResponse), Box<dyn Error>> {
@@ -55,12 +80,12 @@ impl RestApi {
     }
 
     /// This method is not implemented as the login process is handled by the rest_client module.
-    pub async fn post_session() {
+    pub async fn session_post() {
         unimplemented!("This method will not be implemented as the login process is handled by the rest_client module.");
     }
 
     /// Switch to a different account by updating the current session.
-    pub async fn put_session(
+    pub async fn session_put(
         &self,
         body: &AccountSwitchRequest,
     ) -> Result<(Value, AccountSwitchResponse), Box<dyn Error>> {
