@@ -6,6 +6,9 @@
 ig_trading_api:
   account_number_demo: "XXXXX"
   account_number_live: "XXXXX"
+  # Only required for put_session_works integraton test. It must be associated
+  # to the same running environment as the main account number.
+  account_number_test: "XXXXX"
   api_key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
   auto_login: true
   base_url_demo: "https://demo-api.ig.com/gateway/deal"

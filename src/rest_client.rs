@@ -351,6 +351,7 @@ mod tests {
         let config = ApiConfig {
             account_number_demo: "test_account_number_demo".to_string(),
             account_number_live: "test_account_number_live".to_string(),
+            account_number_test: None,
             api_key: "test_api_key".to_string(),
             auto_login: Some(false),
             execution_environment: ExecutionEnvironment::Demo,
@@ -374,6 +375,7 @@ mod tests {
         );
         assert_eq!(rest_client.config.account_number_demo, "test_account_number_demo");
         assert_eq!(rest_client.config.account_number_live, "test_account_number_live");
+        assert_eq!(rest_client.config.account_number_test, None);
         assert_eq!(rest_client.config.api_key, "test_api_key");
         assert_eq!(rest_client.config.auto_login, Some(false));
         assert_eq!(

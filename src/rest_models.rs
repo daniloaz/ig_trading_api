@@ -41,7 +41,7 @@ pub struct AccountSwitchRequest {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountSwitchResponse {
-	pub dealing_enabled: String,
+	pub dealing_enabled: bool,
 	pub has_active_demo_accounts: bool,
 	pub has_active_live_accounts: bool,
 	pub trailing_stops_enabled: bool,

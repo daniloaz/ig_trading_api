@@ -50,6 +50,9 @@ pub struct ApiConfig {
     pub account_number_demo: String,
     /// Your live IG account number.
     pub account_number_live: String,
+    /// An alternative account number for testing. It must be associated to
+    /// the same running environment as the main account number.
+    pub account_number_test: Option<String>,
     /// The API key assigned to your IG account.
     pub api_key: String,
     /// Automatically log in to the API on instantiation and when the session expires.

@@ -1,12 +1,18 @@
 use ig_trading_api::common::*;
-use ig_trading_api::rest_models::*;
 use ig_trading_api::rest_api::*;
+use ig_trading_api::rest_models::*;
 use regex::Regex;
 use std::sync::Arc;
 use tokio::sync::OnceCell;
 
 static API: OnceCell<Arc<RestApi>> = OnceCell::const_new();
-static DEFAULT_TEST_DELAY_SECONDS: u64 = 10;
+static DEFAULT_TEST_DELAY_SECONDS: u64 = 3;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTIONS SHARED BY ALL THE INTEGRATION TESTS.
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// If the API instance is not already initialized, then create and initialize a new one.
 /// Otherwise, return the existing instance.
@@ -115,7 +121,9 @@ async fn aaa_rest_api_is_properly_initialized() {
                     .unwrap()
                     .to_str()
                     .unwrap();
-                let re = regex::Regex::new(r"^Bearer [0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$").unwrap();
+                let re = regex::Regex::new(
+                    r"^Bearer [0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+                ).unwrap();
                 assert!(re.is_match(authorization_value));
             }
             _ => panic!("Invalid session version: {}", session_version),
@@ -157,9 +165,12 @@ async fn put_session_works() {
     // Get the API instance.
     let api = get_or_init_rest_api().await;
 
-    let new_account_number = match api.config.execution_environment {
-        ExecutionEnvironment::Demo => api.config.account_number_live.clone(),
-        ExecutionEnvironment::Live => api.config.account_number_demo.clone(),
+    let new_account_number = match api.config.account_number_test.clone() {
+        Some(account_number) => account_number,
+        None => {
+            println!("No test account number is set in the configuration.");
+            panic!("Test failed due to error.");
+        }
     };
 
     let body = AccountSwitchRequest {
@@ -170,7 +181,10 @@ async fn put_session_works() {
     let response = match api.put_session(&body).await {
         Ok(response) => response,
         Err(e) => {
-            println!("Error switching session to account '{}': {:?}", new_account_number, e);
+            println!(
+                "Error switching session to account '{}': {:?}",
+                new_account_number, e
+            );
             panic!("Test failed due to error.");
         }
     };
