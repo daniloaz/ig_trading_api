@@ -813,66 +813,6 @@ pub struct UpdateApplication {
     pub status: ApplicationStatus,
 }
 
-/// User's session details request with optionally tokens by
-/// making a GET request to the /session endpoint.
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SessionDetailsRequest {
-    /// Indicates whether to fetch session token headers.
-    pub fetch_session_tokens: bool,
-}
-
-impl ValidateRequest for SessionDetailsRequest {}
-
-/// User's session details response.
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SessionDetailsResponse {
-    /// Active account identifier.
-    pub account_id: String,
-    /// Client identifier.
-    pub client_id: String,
-    /// Currency.
-    pub currency: String,
-    /// Lightstreamer endpoint.
-    pub lightstreamer_endpoint: String,
-    /// Locale.
-    pub locale: String,
-    /// Timezone offset relative to UTC (in hours).
-    pub timezone_offset: f64,
-}
-
-/// Validate the session details response.
-impl ValidateResponse for SessionDetailsResponse {}
-
-/// The encryption key to use in order to send the user password in an encrypted form.
-#[derive(Debug, Deserialize, Serialize)]
-pub struct SessionEncryptionKeyResponse {
-    /// Encryption key in Base 64 format.
-    pub encryption_key: String,
-    /// Current timestamp in milliseconds since epoch.
-    pub timestamp: u64,
-}
-
-/// Validate the session encryption key response.
-impl ValidateResponse for SessionEncryptionKeyResponse {}
-
-/// OAuth access token, which is part of the response to the authentication request
-/// when using session_version 3.
-#[derive(Debug, Deserialize)]
-pub struct OauthToken {
-    /// Access token.
-    pub access_token: String,
-    /// Access token expiry in seconds.
-    pub expires_in: String,
-    /// Refresh token.
-    pub refresh_token: String,
-    /// Scope of the access token.
-    pub scope: String,
-    /// Token type.
-    pub token_type: String,
-}
-
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MarketCategory {
@@ -1296,7 +1236,7 @@ impl ValidateRequest for AuthenticationRequest {
     fn validate(&self) -> Result<(), Box<dyn Error>> {
         if !IDENTIFIER_REGEX.is_match(&self.identifier) {
             return Err(Box::new(ApiError {
-                message: "Username field is invalid.".to_string(),
+                message: "Identifier field is invalid.".to_string(),
             }));
         }
 
@@ -1323,3 +1263,64 @@ pub struct AuthenticationResponseV3 {
 
 /// Validate the authentication response.
 impl ValidateResponse for AuthenticationResponseV3 {}
+
+// User's session details request with optionally tokens by
+/// making a GET request to the /session endpoint.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionDetailsRequest {
+    /// Indicates whether to fetch session token headers.
+    pub fetch_session_tokens: bool,
+}
+
+impl ValidateRequest for SessionDetailsRequest {}
+
+/// OAuth access token, which is part of the response to the authentication request
+/// when using session_version 3.
+#[derive(Debug, Deserialize)]
+pub struct OauthToken {
+    /// Access token.
+    pub access_token: String,
+    /// Access token expiry in seconds.
+    pub expires_in: String,
+    /// Refresh token.
+    pub refresh_token: String,
+    /// Scope of the access token.
+    pub scope: String,
+    /// Token type.
+    pub token_type: String,
+}
+
+/// User's session details response.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionDetailsResponse {
+    /// Active account identifier.
+    pub account_id: String,
+    /// Client identifier.
+    pub client_id: String,
+    /// Currency.
+    pub currency: String,
+    /// Lightstreamer endpoint.
+    pub lightstreamer_endpoint: String,
+    /// Locale.
+    pub locale: String,
+    /// Timezone offset relative to UTC (in hours).
+    pub timezone_offset: f64,
+}
+
+/// Validate the session details response.
+impl ValidateResponse for SessionDetailsResponse {}
+
+/// The encryption key to use in order to send the user password in an encrypted form.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionEncryptionKeyResponse {
+    /// Encryption key in Base 64 format.
+    pub encryption_key: String,
+    /// Current timestamp in milliseconds since epoch.
+    pub time_stamp: u64,
+}
+
+/// Validate the session encryption key response.
+impl ValidateResponse for SessionEncryptionKeyResponse {}
