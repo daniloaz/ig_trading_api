@@ -121,7 +121,9 @@ impl std::error::Error for ApiError {}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// Convert a serializable object representing GET parameters to a query string.
-pub fn params_to_query_string<T: Serialize>(data: &T) -> Result<String, serde_urlencoded::ser::Error> {
+pub fn params_to_query_string<T: Serialize>(
+    data: &T,
+) -> Result<String, serde_urlencoded::ser::Error> {
     serde_urlencoded::to_string(data)
 }
 

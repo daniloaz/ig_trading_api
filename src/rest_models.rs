@@ -1,9 +1,9 @@
-use chrono::NaiveDateTime;
 use crate::common::*;
 use crate::rest_regex::*;
-use serde::{Deserialize, Serialize, Serializer};
+use chrono::NaiveDateTime;
 use serde::de::DeserializeOwned;
 use serde::ser::SerializeStruct;
+use serde::{Deserialize, Serialize, Serializer};
 use serde_json::Value;
 use std::error::Error;
 
@@ -15,37 +15,40 @@ use std::error::Error;
 
 ///Trait to validate the fields of a request before sending it to the REST API.
 pub trait ValidateRequest: Serialize {
-	fn validate(&self) -> Result<(), Box<dyn Error>> {
-		Ok(())
-	}
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        Ok(())
+    }
 }
 
 /// Trait to validate the fields of a response coming from the REST API.
 pub trait ValidateResponse: DeserializeOwned {
-	/// Improved deserialization function that provides better error messages using serde_path_to_error.
-	fn deserialize<'de, T>(value: &'de Value) -> Result<T, Box<dyn Error>>
-	where
-		T: Deserialize<'de>,
-	{
-		let result = serde_path_to_error::deserialize(value);
+    /// Improved deserialization function that provides better error messages using serde_path_to_error.
+    fn deserialize<'de, T>(value: &'de Value) -> Result<T, Box<dyn Error>>
+    where
+        T: Deserialize<'de>,
+    {
+        let result = serde_path_to_error::deserialize(value);
 
-		match result {
-			Ok(value) => Ok(value),
-			Err(e) => Err(Box::new(ApiError {
-				message: format!("Failed to deserialize JSON serde_json::Value: {}", e),
-			})),
-		}
-	}
+        match result {
+            Ok(value) => Ok(value),
+            Err(e) => Err(Box::new(ApiError {
+                message: format!("Failed to deserialize JSON serde_json::Value: {}", e),
+            })),
+        }
+    }
 
-	fn from_value(value: &Value) -> Result<Self, Box<dyn Error>> where Self: Sized {
+    fn from_value(value: &Value) -> Result<Self, Box<dyn Error>>
+    where
+        Self: Sized,
+    {
         let instance: Self = <Self as ValidateResponse>::deserialize(value)?;
-        
+
         match instance.validate() {
-			Ok(()) => Ok(instance),
-			Err(e) => Err(Box::new(ApiError {
-				message: format!("Validation failed: {}", e),
-			})),
-		}
+            Ok(()) => Ok(instance),
+            Err(e) => Err(Box::new(ApiError {
+                message: format!("Validation failed: {}", e),
+            })),
+        }
     }
 
     fn validate(&self) -> Result<(), Box<dyn Error>> {
@@ -53,7 +56,8 @@ pub trait ValidateResponse: DeserializeOwned {
     }
 }
 
-/// Struct to represent an empty object for use in optional parameters that must implement Serialize and ValidateRequest traits.
+/// Struct to represent an empty object for use in optional parameters that
+/// must implement Serialize and ValidateRequest traits.
 #[derive(Serialize)]
 pub struct Empty {}
 
@@ -68,310 +72,243 @@ impl ValidateRequest for Empty {}
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Account {
-	pub account_alias: Option<String>,
-	pub account_id: String,
-	pub account_name: String,
-	pub account_type: AccountType,
-	pub balance: Balance,
-	pub can_transfer_from: bool,
-	pub can_transfer_to: bool,
-	pub currency: String,
-	pub preferred: bool,
-	pub status: AccountStatus
+    pub account_alias: Option<String>,
+    pub account_id: String,
+    pub account_name: String,
+    pub account_type: AccountType,
+    pub balance: Balance,
+    pub can_transfer_from: bool,
+    pub can_transfer_to: bool,
+    pub currency: String,
+    pub preferred: bool,
+    pub status: AccountStatus,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Accounts {
-	pub accounts: Vec<Account>
+    pub accounts: Vec<Account>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AccountStatus {
-	Disabled,
-	Enabled,
-	SuspendedFromDealing
+    Disabled,
+    Enabled,
+    SuspendedFromDealing,
 }
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AccountSwitchRequest {
-	pub account_id: String,
-	pub default_account: Option<bool>,
-}
-
-impl ValidateRequest for AccountSwitchRequest {
-	fn validate(&self) -> Result<(), Box<dyn Error>> {
-		if !ACCOUNT_ID_REGEX.is_match(&self.account_id) {
-			return Err(Box::new(ApiError {
-				message: "Account ID field is invalid.".to_string(),
-			}));
-		}
-
-		Ok(())
-	}
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AccountSwitchResponse {
-	pub dealing_enabled: bool,
-	pub has_active_demo_accounts: bool,
-	pub has_active_live_accounts: bool,
-	pub trailing_stops_enabled: bool,
-}
-
-impl ValidateResponse for AccountSwitchResponse {}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AccountType {
-	Cfd,
-	Physical,
-	Spreadbet
+    Cfd,
+    Physical,
+    Spreadbet,
 }
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AuthenticationRequest {
-	pub identifier: String,
-	pub password: String,
-}
-
-impl ValidateRequest for AuthenticationRequest {
-	fn validate(&self) -> Result<(), Box<dyn Error>> {
-		if !IDENTIFIER_REGEX.is_match(&self.identifier) {
-			return Err(Box::new(ApiError {
-				message: "Username field is invalid.".to_string(),
-			}));
-		}
-
-		if !PASSWORD_REGEX.is_match(&self.password) {
-			return Err(Box::new(ApiError {
-				message: "Password field is invalid.".to_string(),
-			}));
-		}
-
-		Ok(())
-	}
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AuthenticationResponseV3 {
-	pub account_id: String,
-	pub client_id: String,
-	pub lightstreamer_endpoint: String,
-	pub oauth_token: OauthToken,
-	pub timezone_offset: f64
-}
-
-impl ValidateResponse for AuthenticationResponseV3 {}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Balance {
-	pub available: f64,
-	pub balance: f64,
-	pub deposit: f64,
-	pub profit_loss: f64
+    pub available: f64,
+    pub balance: f64,
+    pub deposit: f64,
+    pub profit_loss: f64,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Preferences {
-	pub trailing_stops_enabled: bool
+    pub trailing_stops_enabled: bool,
 }
 
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActivityHistoryQuery {
-	pub from: Option<NaiveDateTime>,
-	pub to: Option<NaiveDateTime>,
-	pub detailed: Option<bool>,
-	pub deal_id: Option<String>,
-	pub filter: Option<String>,
-	pub page_size: Option<u32>
+    pub from: Option<NaiveDateTime>,
+    pub to: Option<NaiveDateTime>,
+    pub detailed: Option<bool>,
+    pub deal_id: Option<String>,
+    pub filter: Option<String>,
+    pub page_size: Option<u32>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActivityHistory {
-	pub activities: Vec<Activity>,
-	pub metadata: ActivityMetadata
+    pub activities: Vec<Activity>,
+    pub metadata: ActivityMetadata,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Activity {
-	pub channel: Channel,
-	pub date: String,
-	pub deal_id: String,
-	pub description: String,
-	pub details: Option<ActivityDetails>,
-	pub epic: String,
-	pub period: String,
-	pub status: ActivityStatus,
-	pub r#type: ActivityType
+    pub channel: Channel,
+    pub date: String,
+    pub deal_id: String,
+    pub description: String,
+    pub details: Option<ActivityDetails>,
+    pub epic: String,
+    pub period: String,
+    pub status: ActivityStatus,
+    pub r#type: ActivityType,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Channel {
-	Dealer,
-	Mobile,
-	PublicFixApi,
-	PublicWebApi,
-	System,
-	Web
+    Dealer,
+    Mobile,
+    PublicFixApi,
+    PublicWebApi,
+    System,
+    Web,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActivityDetails {
-	pub actions: Vec<ActivityAction>,
-	pub currency: String,
-	pub deal_reference: String,
-	pub direction: Direction,
-	pub good_till_date: String,
-	pub guaranteed_stop: bool,
-	pub level: f64,
-	pub limit_distance: f64,
-	pub limit_level: f64,
-	pub market_name: String,
-	pub size: f64,
-	pub stop_distance: f64,
-	pub stop_level: f64,
-	pub trailing_step: f64,
-	pub trailing_stop_distance: f64
+    pub actions: Vec<ActivityAction>,
+    pub currency: String,
+    pub deal_reference: String,
+    pub direction: Direction,
+    pub good_till_date: String,
+    pub guaranteed_stop: bool,
+    pub level: f64,
+    pub limit_distance: f64,
+    pub limit_level: f64,
+    pub market_name: String,
+    pub size: f64,
+    pub stop_distance: f64,
+    pub stop_level: f64,
+    pub trailing_step: f64,
+    pub trailing_stop_distance: f64,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActivityAction {
-	pub action_type: ActivityActionType,
-	pub affected_deal_id: String
+    pub action_type: ActivityActionType,
+    pub affected_deal_id: String,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ActivityActionType {
-	LimitOrderAmended,
-	LimitOrderDeleted,
-	LimitOrderFilled,
-	LimitOrderOpened,
-	LimitOrderRolled,
-	PositionClosed,
-	PositionDeleted,
-	PositionOpened,
-	PositionPartiallyClosed,
-	PositionRolled,
-	StopLimitAmended,
-	StopOrderAmended,
-	StopOrderDeleted,
-	StopOrderFilled,
-	StopOrderOpened,
-	StopOrderRolled,
-	Unknown,
-	WorkingOrderDeleted
+    LimitOrderAmended,
+    LimitOrderDeleted,
+    LimitOrderFilled,
+    LimitOrderOpened,
+    LimitOrderRolled,
+    PositionClosed,
+    PositionDeleted,
+    PositionOpened,
+    PositionPartiallyClosed,
+    PositionRolled,
+    StopLimitAmended,
+    StopOrderAmended,
+    StopOrderDeleted,
+    StopOrderFilled,
+    StopOrderOpened,
+    StopOrderRolled,
+    Unknown,
+    WorkingOrderDeleted,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Direction {
-	Buy,
-	Sell
+    Buy,
+    Sell,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ActivityStatus {
-	Accepted,
-	Rejected,
-	Unknown
+    Accepted,
+    Rejected,
+    Unknown,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ActivityType {
-	EditStopAndLimit,
-	Position,
-	System,
-	WorkingOrder
+    EditStopAndLimit,
+    Position,
+    System,
+    WorkingOrder,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActivityMetadata {
-	pub paging: ActivityPaging
+    pub paging: ActivityPaging,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActivityPaging {
-	pub next: Option<String>,
-	pub size: u32
+    pub next: Option<String>,
+    pub size: u32,
 }
 
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionHistoryQuery {
-	pub r#type: Option<TransactionType>,
-	pub from: Option<NaiveDateTime>,
-	pub to: Option<NaiveDateTime>,
-	pub max_span_seconds: Option<u64>,
-	pub page_size: Option<u32>,
-	pub page_number: Option<u32>
+    pub r#type: Option<TransactionType>,
+    pub from: Option<NaiveDateTime>,
+    pub to: Option<NaiveDateTime>,
+    pub max_span_seconds: Option<u64>,
+    pub page_size: Option<u32>,
+    pub page_number: Option<u32>,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TransactionType {
-	All,
-	AllDeal,
-	Deposit,
-	Withdrawal
+    All,
+    AllDeal,
+    Deposit,
+    Withdrawal,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionHistory {
-	pub metadata: TransactionMetadata,
-	pub transactions: Vec<Transaction>
+    pub metadata: TransactionMetadata,
+    pub transactions: Vec<Transaction>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionMetadata {
-	pub page_data: TransactionPaging,
-	pub size: u32
+    pub page_data: TransactionPaging,
+    pub size: u32,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionPaging {
-	pub page_number: u32,
-	pub page_size: u32,
-	pub total_pages: u32
+    pub page_number: u32,
+    pub page_size: u32,
+    pub total_pages: u32,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
-	pub cash_transaction: bool,
-	pub close_level: String,
-	pub currency: String,
-	pub date: String,
-	pub date_utc: String,
-	pub instrument_name: String,
-	pub open_date_utc: String,
-	pub open_level: String,
-	pub period: String,
-	pub profit_and_loss: String,
-	pub reference: String,
-	pub size: String,
-	pub transaction_type: String
+    pub cash_transaction: bool,
+    pub close_level: String,
+    pub currency: String,
+    pub date: String,
+    pub date_utc: String,
+    pub instrument_name: String,
+    pub open_date_utc: String,
+    pub open_level: String,
+    pub period: String,
+    pub profit_and_loss: String,
+    pub reference: String,
+    pub size: String,
+    pub transaction_type: String,
 }
 
 #[derive(Debug, Default)]
@@ -413,475 +350,476 @@ pub struct Sentiment {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DealConfirmation {
-	pub affected_deals: Vec<AffectedDeal>,
-	pub date: String,
-	pub deal_id: String,
-	pub deal_reference: String,
-	pub deal_status: DealStatus,
-	pub direction: Direction,
-	pub epic: String,
-	pub expiry: String,
-	pub guaranteed_stop: bool,
-	pub level: f64,
-	pub limit_distance: f64,
-	pub limit_level: f64,
-	pub profit: f64,
-	pub profit_currency: String,
-	pub reason: DealReason,
-	pub size: f64,
-	pub status: PositionStatus,
-	pub stop_distance: f64,
-	pub stop_level: f64,
-	pub trailing_stop: bool
+    pub affected_deals: Vec<AffectedDeal>,
+    pub date: String,
+    pub deal_id: String,
+    pub deal_reference: String,
+    pub deal_status: DealStatus,
+    pub direction: Direction,
+    pub epic: String,
+    pub expiry: String,
+    pub guaranteed_stop: bool,
+    pub level: f64,
+    pub limit_distance: f64,
+    pub limit_level: f64,
+    pub profit: f64,
+    pub profit_currency: String,
+    pub reason: DealReason,
+    pub size: f64,
+    pub status: PositionStatus,
+    pub stop_distance: f64,
+    pub stop_level: f64,
+    pub trailing_stop: bool,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AffectedDeal {
-	pub deal_id: String,
-	pub status: AffectedDealStatus
+    pub deal_id: String,
+    pub status: AffectedDealStatus,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AffectedDealStatus {
-	Amended,
-	Deleted,
-	FullyClosed,
-	Opened,
-	PartiallyClosed
+    Amended,
+    Deleted,
+    FullyClosed,
+    Opened,
+    PartiallyClosed,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum DealStatus {
-	Accepted,
-	Rejected
+    Accepted,
+    Rejected,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum DealReason {
-	AccountNotEnabledToTrading,
-	AttachedOrderLevelError,
-	AttachedOrderTrailingStopError,
-	CannotChangeStopType,
-	CannotRemoveStop,
-	ClosingOnlyTradesAcceptedOnThisMarket,
-	ClosingsOnlyAccount,
-	ConflictingOrder,
-	ContactSupportInstrumentError,
-	CrSpacing,
-	DuplicateOrderError,
-	ExchangeManualOverride,
-	ExpiryLessThanSprintMarketMinExpiry,
-	FinanceRepeatDealing,
-	ForceOpenOnSameMarketDifferentCurrency,
-	GeneralError,
-	GoodTillDateInThePast,
-	InstrumentNotFound,
-	InstrumentNotTradeableInThisCurrency,
-	InsufficientFunds,
-	LevelToleranceError,
-	LimitOrderWrongSideOfMarket,
-	ManualOrderTimeout,
-	MarginError,
-	MarketClosed,
-	MarketClosedWithEdits,
-	MarketClosing,
-	MarketNotBorrowable,
-	MarketOffline,
-	MarketOrdersNotAllowedOnInstrument,
-	MarketPhoneOnly,
-	MarketRolled,
-	MarketUnavailableToClient,
-	MaxAutoSizeExceeded,
-	MinimumOrderSizeError,
-	MoveAwayOnlyLimit,
-	MoveAwayOnlyStop,
-	MoveAwayOnlyTriggerLevel,
-	NcrPositionsOnCrAccount,
-	OpposingDirectionOrdersNotAllowed,
-	OpposingPositionsNotAllowed,
-	OrderDeclined,
-	OrderLocked,
-	OrderNotFound,
-	OrderSizeCannotBeFilled,
-	OverNormalMarketSize,
-	PartialyClosedPositionNotDeleted,
-	PositionAlreadyExistsInOppositeDirection,
-	PositionNotAvailableToCancel,
-	PositionNotAvailableToClose,
-	PositionNotFound,
-	RejectCfdOrderOnSpreadbetAccount,
-	RejectSpreadbetOrderOnCfdAccount,
-	SizeIncrement,
-	SprintMarketExpiryAfterMarketClose,
-	StopOrLimitNotAllowed,
-	StopRequiredError,
-	StrikeLevelTolerance,
-	Success,
-	TrailingStopNotAllowed,
-	Unknown,
-	WrongSideOfMarket
+    AccountNotEnabledToTrading,
+    AttachedOrderLevelError,
+    AttachedOrderTrailingStopError,
+    CannotChangeStopType,
+    CannotRemoveStop,
+    ClosingOnlyTradesAcceptedOnThisMarket,
+    ClosingsOnlyAccount,
+    ConflictingOrder,
+    ContactSupportInstrumentError,
+    CrSpacing,
+    DuplicateOrderError,
+    ExchangeManualOverride,
+    ExpiryLessThanSprintMarketMinExpiry,
+    FinanceRepeatDealing,
+    ForceOpenOnSameMarketDifferentCurrency,
+    GeneralError,
+    GoodTillDateInThePast,
+    InstrumentNotFound,
+    InstrumentNotTradeableInThisCurrency,
+    InsufficientFunds,
+    LevelToleranceError,
+    LimitOrderWrongSideOfMarket,
+    ManualOrderTimeout,
+    MarginError,
+    MarketClosed,
+    MarketClosedWithEdits,
+    MarketClosing,
+    MarketNotBorrowable,
+    MarketOffline,
+    MarketOrdersNotAllowedOnInstrument,
+    MarketPhoneOnly,
+    MarketRolled,
+    MarketUnavailableToClient,
+    MaxAutoSizeExceeded,
+    MinimumOrderSizeError,
+    MoveAwayOnlyLimit,
+    MoveAwayOnlyStop,
+    MoveAwayOnlyTriggerLevel,
+    NcrPositionsOnCrAccount,
+    OpposingDirectionOrdersNotAllowed,
+    OpposingPositionsNotAllowed,
+    OrderDeclined,
+    OrderLocked,
+    OrderNotFound,
+    OrderSizeCannotBeFilled,
+    OverNormalMarketSize,
+    PartialyClosedPositionNotDeleted,
+    PositionAlreadyExistsInOppositeDirection,
+    PositionNotAvailableToCancel,
+    PositionNotAvailableToClose,
+    PositionNotFound,
+    RejectCfdOrderOnSpreadbetAccount,
+    RejectSpreadbetOrderOnCfdAccount,
+    SizeIncrement,
+    SprintMarketExpiryAfterMarketClose,
+    StopOrLimitNotAllowed,
+    StopRequiredError,
+    StrikeLevelTolerance,
+    Success,
+    TrailingStopNotAllowed,
+    Unknown,
+    WrongSideOfMarket,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PositionStatus {
-	Amended,
-	Closed,
-	Deleted,
-	Open,
-	PartiallyClosed
+    Amended,
+    Closed,
+    Deleted,
+    Open,
+    PartiallyClosed,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Positions {
-	pub positions: Vec<Position>
+    pub positions: Vec<Position>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Position {
-	pub market: MarketData,
-	pub position: PositionData
+    pub market: MarketData,
+    pub position: PositionData,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MarketData {
-	pub bid: Option<f64>,
-	pub delay_time: f64,
-	pub epic: String,
-	pub exchange_id: Option<String>,
-	pub expiry: String,
-	pub high: Option<f64>,
-	pub instrument_name: String,
-	pub instrument_type: InstrumentType,
-	pub lot_size: Option<f64>,
-	pub low: Option<f64>,
-	pub market_status: MarketStatus,
-	pub net_change: f64,
-	pub offer: Option<f64>,
-	pub percentage_change: f64,
-	pub scaling_factor: f64,
-	pub streaming_prices_available: bool,
-	pub update_time: String,
-	#[serde(rename = "updateTimeUTC")]
-	pub update_time_utc: String
+    pub bid: Option<f64>,
+    pub delay_time: f64,
+    pub epic: String,
+    pub exchange_id: Option<String>,
+    pub expiry: String,
+    pub high: Option<f64>,
+    pub instrument_name: String,
+    pub instrument_type: InstrumentType,
+    pub lot_size: Option<f64>,
+    pub low: Option<f64>,
+    pub market_status: MarketStatus,
+    pub net_change: f64,
+    pub offer: Option<f64>,
+    pub percentage_change: f64,
+    pub scaling_factor: f64,
+    pub streaming_prices_available: bool,
+    pub update_time: String,
+    #[serde(rename = "updateTimeUTC")]
+    pub update_time_utc: String,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum InstrumentType {
-	Binary,
-	BungeeCapped,
-	BungeeCommodities,
-	BungeeCurrencies,
-	BungeeIndices,
-	Commodities,
-	Currencies,
-	Indices,
-	KnockoutsCommodities,
-	KnockoutsCurrencies,
-	KnockoutsIndices,
-	KnockoutsShares,
-	OptCommodities,
-	OptCurrencies,
-	OptIndices,
-	OptRates,
-	OptShares,
-	Rates,
-	Sectors,
-	Shares,
-	SprintMarket,
-	TestMarket,
-	Unknown
+    Binary,
+    BungeeCapped,
+    BungeeCommodities,
+    BungeeCurrencies,
+    BungeeIndices,
+    Commodities,
+    Currencies,
+    Indices,
+    KnockoutsCommodities,
+    KnockoutsCurrencies,
+    KnockoutsIndices,
+    KnockoutsShares,
+    OptCommodities,
+    OptCurrencies,
+    OptIndices,
+    OptRates,
+    OptShares,
+    Rates,
+    Sectors,
+    Shares,
+    SprintMarket,
+    TestMarket,
+    Unknown,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum MarketStatus {
-	Closed,
-	EditsOnly,
-	Offline,
-	OnAuction,
-	OnAuctionNoEdits,
-	Suspended,
-	Tradeable
+    Closed,
+    EditsOnly,
+    Offline,
+    OnAuction,
+    OnAuctionNoEdits,
+    Suspended,
+    Tradeable,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PositionData {
-	pub contract_size: f64,
-	pub controlled_risk: bool,
-	pub created_date: String,
-	pub created_date_utc: String,
-	pub currency: String,
-	pub deal_id: String,
-	pub deal_reference: String,
-	pub direction: Direction,
-	pub level: f64,
-	pub limit_level: f64,
-	pub limited_risk_premium: f64,
-	pub size: f64,
-	pub stop_level: f64,
-	pub trailing_step: f64,
-	pub trailing_stop_distance: f64
+    pub contract_size: f64,
+    pub controlled_risk: bool,
+    pub created_date: String,
+    pub created_date_utc: String,
+    pub currency: String,
+    pub deal_id: String,
+    pub deal_reference: String,
+    pub direction: Direction,
+    pub level: f64,
+    pub limit_level: f64,
+    pub limited_risk_premium: f64,
+    pub size: f64,
+    pub stop_level: f64,
+    pub trailing_step: f64,
+    pub trailing_stop_distance: f64,
 }
 
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ClosePosition {
-	pub deal_id: Option<String>,
-	pub direction: Option<Direction>,
-	pub epic: Option<String>,
-	pub expiry: Option<String>,
-	pub level: Option<f64>,
-	pub order_type: Option<OrderType>,
-	pub quote_id: Option<String>,
-	pub size: Option<f64>,
-	pub time_in_force: Option<TimeInForce>
+    pub deal_id: Option<String>,
+    pub direction: Option<Direction>,
+    pub epic: Option<String>,
+    pub expiry: Option<String>,
+    pub level: Option<f64>,
+    pub order_type: Option<OrderType>,
+    pub quote_id: Option<String>,
+    pub size: Option<f64>,
+    pub time_in_force: Option<TimeInForce>,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum OrderType {
-	Limit,
-	Market,
-	Quote
+    Limit,
+    Market,
+    Quote,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TimeInForce {
-	ExecuteAndEliminate,
-	FillOrKill
+    ExecuteAndEliminate,
+    FillOrKill,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DealRef {
-	pub deal_reference: String
+    pub deal_reference: String,
 }
 
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreatePosition {
-	pub currency_code: Option<String>,
-	pub deal_reference: Option<String>,
-	pub direction: Option<Direction>,
-	pub epic: Option<String>,
-	pub expiry: Option<String>,
-	pub force_open: Option<bool>,
-	pub guaranteed_stop: Option<bool>,
-	pub level: Option<f64>,
-	pub limit_distance: Option<f64>,
-	pub limit_level: Option<f64>,
-	pub order_type: Option<OrderType>,
-	pub quote_id: Option<String>,
-	pub size: Option<f64>,
-	pub stop_distance: Option<f64>,
-	pub stop_level: Option<f64>,
-	pub time_in_force: Option<TimeInForce>,
-	pub trailing_stop: Option<bool>,
-	pub trailing_stop_increment: Option<f64>
+    pub currency_code: Option<String>,
+    pub deal_reference: Option<String>,
+    pub direction: Option<Direction>,
+    pub epic: Option<String>,
+    pub expiry: Option<String>,
+    pub force_open: Option<bool>,
+    pub guaranteed_stop: Option<bool>,
+    pub level: Option<f64>,
+    pub limit_distance: Option<f64>,
+    pub limit_level: Option<f64>,
+    pub order_type: Option<OrderType>,
+    pub quote_id: Option<String>,
+    pub size: Option<f64>,
+    pub stop_distance: Option<f64>,
+    pub stop_level: Option<f64>,
+    pub time_in_force: Option<TimeInForce>,
+    pub trailing_stop: Option<bool>,
+    pub trailing_stop_increment: Option<f64>,
 }
 
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdatePosition {
-	pub guaranteed_stop: Option<bool>,
-	pub limit_level: Option<f64>,
-	pub stop_level: Option<f64>,
-	pub trailing_stop: Option<bool>,
-	pub trailing_stop_distance: Option<f64>,
-	pub trailing_stop_increment: Option<f64>
+    pub guaranteed_stop: Option<bool>,
+    pub limit_level: Option<f64>,
+    pub stop_level: Option<f64>,
+    pub trailing_stop: Option<bool>,
+    pub trailing_stop_distance: Option<f64>,
+    pub trailing_stop_increment: Option<f64>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SprintMarketPositions {
-	pub sprint_market_positions: Vec<SprintMarketPosition>
+    pub sprint_market_positions: Vec<SprintMarketPosition>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SprintMarketPosition {
-	pub created_date: String,
-	pub currency: String,
-	pub deal_id: String,
-	pub description: String,
-	pub direction: Direction,
-	pub epic: String,
-	pub expiry_time: String,
-	pub instrument_name: String,
-	pub market_status: MarketStatus,
-	pub payout_amount: f64,
-	pub size: f64,
-	pub strike_level: f64
+    pub created_date: String,
+    pub currency: String,
+    pub deal_id: String,
+    pub description: String,
+    pub direction: Direction,
+    pub epic: String,
+    pub expiry_time: String,
+    pub instrument_name: String,
+    pub market_status: MarketStatus,
+    pub payout_amount: f64,
+    pub size: f64,
+    pub strike_level: f64,
 }
 
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateSprintMarketPosition {
-	pub deal_reference: Option<String>,
-	pub direction: Option<Direction>,
-	pub epic: Option<String>,
-	pub expiry_period: Option<SprintMarketExpiryPeriod>,
-	pub size: Option<f64>
+    pub deal_reference: Option<String>,
+    pub direction: Option<Direction>,
+    pub epic: Option<String>,
+    pub expiry_period: Option<SprintMarketExpiryPeriod>,
+    pub size: Option<f64>,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum SprintMarketExpiryPeriod {
-	FiveMinutes,
-	OneMinute,
-	SixtyMinutes,
-	TwentyMinutes,
-	TwoMinutes
+    FiveMinutes,
+    OneMinute,
+    SixtyMinutes,
+    TwentyMinutes,
+    TwoMinutes,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkingOrders {
-	pub working_orders: Vec<WorkingOrder>
+    pub working_orders: Vec<WorkingOrder>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkingOrder {
-	market_data: MarketData,
-	working_order_data: WorkingOrderData
+    market_data: MarketData,
+    working_order_data: WorkingOrderData,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkingOrderData {
-	pub created_date: String,
-	#[serde(rename = "createdDateUTC")]
-	pub created_date_utc: String,
-	pub currency_code: String,
-	pub deal_id: String,
-	pub direction: Direction,
-	pub dma: bool,
-	pub epic: String,
-	pub good_till_date: String,
-	#[serde(rename = "goodTillDateISO")]
-	pub good_till_date_iso: String,
-	pub guaranteed_stop: bool,
-	pub limit_distance: f64,
-	pub limited_risk_premium: f64,
-	pub order_level: f64,
-	pub order_size: f64,
-	pub order_type: WorkingOrderType,
-	pub stop_distance: f64,
-	pub time_in_force: WorkingOrderTimeInForce
+    pub created_date: String,
+    #[serde(rename = "createdDateUTC")]
+    pub created_date_utc: String,
+    pub currency_code: String,
+    pub deal_id: String,
+    pub direction: Direction,
+    pub dma: bool,
+    pub epic: String,
+    pub good_till_date: String,
+    #[serde(rename = "goodTillDateISO")]
+    pub good_till_date_iso: String,
+    pub guaranteed_stop: bool,
+    pub limit_distance: f64,
+    pub limited_risk_premium: f64,
+    pub order_level: f64,
+    pub order_size: f64,
+    pub order_type: WorkingOrderType,
+    pub stop_distance: f64,
+    pub time_in_force: WorkingOrderTimeInForce,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum WorkingOrderType {
-	Limit,
-	Stop
+    Limit,
+    Stop,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum WorkingOrderTimeInForce {
-	GoodTillCancelled,
-	GoodTillDate
+    GoodTillCancelled,
+    GoodTillDate,
 }
 
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateWorkingOrder {
-	pub currency_code: Option<String>,
-	pub deal_reference: Option<String>,
-	pub direction: Option<Direction>,
-	pub epic: Option<String>,
-	pub expiry: Option<String>,
-	pub force_open: Option<bool>,
-	pub good_till_date: Option<String>,
-	pub guaranteed_stop: Option<bool>,
-	pub level: Option<f64>,
-	pub limit_distance: Option<f64>,
-	pub limit_level: Option<f64>,
-	pub size: Option<f64>,
-	pub stop_distance: Option<f64>,
-	pub stop_level: Option<f64>,
-	pub time_in_force: Option<WorkingOrderTimeInForce>,
-	pub r#type: Option<WorkingOrderType>
+    pub currency_code: Option<String>,
+    pub deal_reference: Option<String>,
+    pub direction: Option<Direction>,
+    pub epic: Option<String>,
+    pub expiry: Option<String>,
+    pub force_open: Option<bool>,
+    pub good_till_date: Option<String>,
+    pub guaranteed_stop: Option<bool>,
+    pub level: Option<f64>,
+    pub limit_distance: Option<f64>,
+    pub limit_level: Option<f64>,
+    pub size: Option<f64>,
+    pub stop_distance: Option<f64>,
+    pub stop_level: Option<f64>,
+    pub time_in_force: Option<WorkingOrderTimeInForce>,
+    pub r#type: Option<WorkingOrderType>,
 }
 
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateWorkingOrder {
-	pub good_till_date: Option<String>,
-	pub guaranteed_stop: Option<bool>,
-	pub level: Option<f64>,
-	pub limit_distance: Option<f64>,
-	pub limit_level: Option<f64>,
-	pub stop_distance: Option<f64>,
-	pub stop_level: Option<f64>,
-	pub time_in_force: Option<WorkingOrderTimeInForce>,
-	pub r#type: Option<WorkingOrderType>
+    pub good_till_date: Option<String>,
+    pub guaranteed_stop: Option<bool>,
+    pub level: Option<f64>,
+    pub limit_distance: Option<f64>,
+    pub limit_level: Option<f64>,
+    pub stop_distance: Option<f64>,
+    pub stop_level: Option<f64>,
+    pub time_in_force: Option<WorkingOrderTimeInForce>,
+    pub r#type: Option<WorkingOrderType>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OkResponse {
-	pub status: ResponseStatus
+    pub status: ResponseStatus,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ResponseStatus {
-	Success
+    Success,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Application {
-	pub allow_equities: bool,
-	pub allow_quote_orders: bool,
-	pub allowance_account_historical_data: f64,
-	pub allowance_account_overall: f64,
-	pub allowance_account_trading: f64,
-	pub allowance_application_overall: f64,
-	pub api_key: String,
-	pub concurrent_subscriptions_limit: f64,
-	pub created_date: String,
-	pub name: String,
-	pub status: ApplicationStatus
+    pub allow_equities: bool,
+    pub allow_quote_orders: bool,
+    pub allowance_account_historical_data: f64,
+    pub allowance_account_overall: f64,
+    pub allowance_account_trading: f64,
+    pub allowance_application_overall: f64,
+    pub api_key: String,
+    pub concurrent_subscriptions_limit: f64,
+    pub created_date: String,
+    pub name: String,
+    pub status: ApplicationStatus,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ApplicationStatus {
-	Disabled,
-	Enabled,
-	Revoked
+    Disabled,
+    Enabled,
+    Revoked,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateApplication {
-	pub allowance_account_overall: f64,
-	pub allowance_account_trading: f64,
-	pub api_key: String,
-	pub status: ApplicationStatus
+    pub allowance_account_overall: f64,
+    pub allowance_account_trading: f64,
+    pub api_key: String,
+    pub status: ApplicationStatus,
 }
 
-/// User's session details request with optionally tokens.
+/// User's session details request with optionally tokens by
+/// making a GET request to the /session endpoint.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionDetailsRequest {
-	/// Indicates whether to fetch session token headers.
-	pub fetch_session_tokens: bool,
+    /// Indicates whether to fetch session token headers.
+    pub fetch_session_tokens: bool,
 }
 
 impl ValidateRequest for SessionDetailsRequest {}
@@ -890,46 +828,49 @@ impl ValidateRequest for SessionDetailsRequest {}
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionDetailsResponse {
-	/// Active account identifier.
-	pub account_id: String,
-	/// Client identifier.
-	pub client_id: String,
-	/// Currency.
-	pub currency: String,
-	/// Lightstreamer endpoint.
-	pub lightstreamer_endpoint: String,
-	/// Locale.
-	pub locale: String,
-	/// Timezone offset relative to UTC (in hours).
-	pub timezone_offset: f64
+    /// Active account identifier.
+    pub account_id: String,
+    /// Client identifier.
+    pub client_id: String,
+    /// Currency.
+    pub currency: String,
+    /// Lightstreamer endpoint.
+    pub lightstreamer_endpoint: String,
+    /// Locale.
+    pub locale: String,
+    /// Timezone offset relative to UTC (in hours).
+    pub timezone_offset: f64,
 }
 
+/// Validate the session details response.
 impl ValidateResponse for SessionDetailsResponse {}
 
-/// The encryption key to use in order to send the user password in an encrypted form
+/// The encryption key to use in order to send the user password in an encrypted form.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct SessionEncryptionKeyResponse {
-	/// Encryption key in Base 64 format.
-	pub encryption_key: String,
-	/// Current timestamp in milliseconds since epoch.
-	pub timestamp: u64,
+    /// Encryption key in Base 64 format.
+    pub encryption_key: String,
+    /// Current timestamp in milliseconds since epoch.
+    pub timestamp: u64,
 }
 
+/// Validate the session encryption key response.
 impl ValidateResponse for SessionEncryptionKeyResponse {}
 
-/// OAuth access token.
+/// OAuth access token, which is part of the response to the authentication request
+/// when using session_version 3.
 #[derive(Debug, Deserialize)]
 pub struct OauthToken {
-	/// Access token.
-	pub access_token: String,
-	/// Access token expiry in seconds.
-	pub expires_in: String,
-	/// Refresh token.
-	pub refresh_token: String,
-	/// Scope of the access token.
-	pub scope: String,
-	/// Token type.
-	pub token_type: String
+    /// Access token.
+    pub access_token: String,
+    /// Access token expiry in seconds.
+    pub expires_in: String,
+    /// Refresh token.
+    pub refresh_token: String,
+    /// Scope of the access token.
+    pub scope: String,
+    /// Token type.
+    pub token_type: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1126,7 +1067,7 @@ pub struct OpeningHours {
 #[serde(rename_all = "camelCase")]
 pub struct Rollover {
     pub last_rollover_time: String,
-    pub rollover_info: String
+    pub rollover_info: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1172,7 +1113,7 @@ pub struct MarketSnapshot {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MarketSearch {
-    pub markets: Vec<MarketData>
+    pub markets: Vec<MarketData>,
 }
 
 #[derive(Debug, Default, Serialize)]
@@ -1183,7 +1124,7 @@ pub struct PricesQuery {
     pub to: Option<NaiveDateTime>,
     pub max: Option<u32>,
     pub page_size: Option<u32>,
-    pub page_number: Option<u32>
+    pub page_number: Option<u32>,
 }
 
 #[derive(Debug, Serialize)]
@@ -1203,7 +1144,7 @@ pub enum Resolution {
     Minute5,
     Month,
     Second,
-    Week
+    Week,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1211,7 +1152,7 @@ pub enum Resolution {
 pub struct Prices {
     pub instrument_type: InstrumentType,
     pub metadata: PriceMetadata,
-    pub prices: Vec<Price>
+    pub prices: Vec<Price>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1219,7 +1160,7 @@ pub struct Prices {
 pub struct PriceMetadata {
     pub page_data: PricePaging,
     pub size: f64,
-    pub allowance: PriceAllowance
+    pub allowance: PriceAllowance,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1227,7 +1168,7 @@ pub struct PriceMetadata {
 pub struct PricePaging {
     pub page_number: u32,
     pub page_size: u32,
-    pub total_pages: u32
+    pub total_pages: u32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1235,7 +1176,7 @@ pub struct PricePaging {
 pub struct PriceAllowance {
     pub allowance_expiry: u32,
     pub remaining_allowance: u32,
-    pub total_allowance: u32
+    pub total_allowance: u32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1248,7 +1189,7 @@ pub struct Price {
     pub open_price: AskBid,
     pub snapshot_time: String,
     #[serde(rename = "snapshotTimeUTC")]
-    pub snapshot_time_utc: String
+    pub snapshot_time_utc: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1256,48 +1197,129 @@ pub struct Price {
 pub struct AskBid {
     pub ask: f64,
     pub bid: f64,
-    pub last_traded: Option<f64>
+    pub last_traded: Option<f64>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Watchlists {
-	pub watchlists: Vec<Watchlist>
+    pub watchlists: Vec<Watchlist>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Watchlist {
-	pub default_system_watchlist: bool,
-	pub deleteable: bool,
-	pub editable: bool,
-	pub id: String,
-	pub name: String
+    pub default_system_watchlist: bool,
+    pub deleteable: bool,
+    pub editable: bool,
+    pub id: String,
+    pub name: String,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateWatchlist {
-	pub epics: Vec<String>,
-	pub name: String
+    pub epics: Vec<String>,
+    pub name: String,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateWatchlistResult {
-	pub status: CreateWatchlistStatus,
-	pub watchlist_id: String
+    pub status: CreateWatchlistStatus,
+    pub watchlist_id: String,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum CreateWatchlistStatus {
-	Success,
-	SuccesNotAllInstrumentsAdded
+    Success,
+    SuccesNotAllInstrumentsAdded,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AddToWatchlist {
-	pub epic: String
+    pub epic: String,
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// SESSION ENDPOINT MODELS.
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/// Switch the active account by making a PUT request to the /session endpoint.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountSwitchRequest {
+    pub account_id: String,
+    pub default_account: Option<bool>,
+}
+
+/// Validate the account switch request.
+impl ValidateRequest for AccountSwitchRequest {
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        if !ACCOUNT_ID_REGEX.is_match(&self.account_id) {
+            return Err(Box::new(ApiError {
+                message: "Account ID field is invalid.".to_string(),
+            }));
+        }
+
+        Ok(())
+    }
+}
+
+/// Response to the account switch request.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountSwitchResponse {
+    pub dealing_enabled: bool,
+    pub has_active_demo_accounts: bool,
+    pub has_active_live_accounts: bool,
+    pub trailing_stops_enabled: bool,
+}
+
+/// Validate the account switch response.
+impl ValidateResponse for AccountSwitchResponse {}
+
+/// Authenticate the user by making a POST request to the /session endpoint.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthenticationRequest {
+    pub identifier: String,
+    pub password: String,
+}
+
+/// Validate the authentication request.
+impl ValidateRequest for AuthenticationRequest {
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        if !IDENTIFIER_REGEX.is_match(&self.identifier) {
+            return Err(Box::new(ApiError {
+                message: "Username field is invalid.".to_string(),
+            }));
+        }
+
+        if !PASSWORD_REGEX.is_match(&self.password) {
+            return Err(Box::new(ApiError {
+                message: "Password field is invalid.".to_string(),
+            }));
+        }
+
+        Ok(())
+    }
+}
+
+/// Response to the authentication request when using session_version 3.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthenticationResponseV3 {
+    pub account_id: String,
+    pub client_id: String,
+    pub lightstreamer_endpoint: String,
+    pub oauth_token: OauthToken,
+    pub timezone_offset: f64,
+}
+
+/// Validate the authentication response.
+impl ValidateResponse for AuthenticationResponseV3 {}

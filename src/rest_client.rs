@@ -1,5 +1,7 @@
 use crate::common::*;
-use crate::rest_models::{AuthenticationRequest, AuthenticationResponseV3, ValidateRequest, ValidateResponse};
+use crate::rest_models::{
+    AuthenticationRequest, AuthenticationResponseV3, ValidateRequest, ValidateResponse,
+};
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::StatusCode;
 use serde::Serialize;
@@ -245,7 +247,10 @@ impl RestClient {
                 let mut auth_headers = HeaderMap::new();
                 auth_headers.insert(
                     "Authorization",
-                    HeaderValue::from_str(&format!("Bearer {}", login_response.oauth_token.access_token))?,
+                    HeaderValue::from_str(&format!(
+                        "Bearer {}",
+                        login_response.oauth_token.access_token
+                    ))?,
                 );
 
                 let account_number = match self.config.execution_environment {
@@ -253,10 +258,7 @@ impl RestClient {
                     ExecutionEnvironment::Live => self.config.account_number_live.clone(),
                 };
 
-                auth_headers.insert(
-                    "IG-ACCOUNT-ID",
-                    HeaderValue::from_str(&account_number)?,
-                );
+                auth_headers.insert("IG-ACCOUNT-ID", HeaderValue::from_str(&account_number)?);
 
                 self.auth_headers = Some(auth_headers);
 
@@ -384,8 +386,14 @@ mod tests {
             rest_client.common_headers.get("X-IG-API-KEY").unwrap(),
             "test_api_key"
         );
-        assert_eq!(rest_client.config.account_number_demo, "test_account_number_demo");
-        assert_eq!(rest_client.config.account_number_live, "test_account_number_live");
+        assert_eq!(
+            rest_client.config.account_number_demo,
+            "test_account_number_demo"
+        );
+        assert_eq!(
+            rest_client.config.account_number_live,
+            "test_account_number_live"
+        );
         assert_eq!(rest_client.config.account_number_test, None);
         assert_eq!(rest_client.config.api_key, "test_api_key");
         assert_eq!(rest_client.config.auto_login, Some(false));
