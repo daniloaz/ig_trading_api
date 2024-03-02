@@ -1,6 +1,69 @@
 use chrono::NaiveDateTime;
+use crate::common::*;
+use crate::rest_regex::*;
 use serde::{Deserialize, Serialize, Serializer};
+use serde::de::DeserializeOwned;
 use serde::ser::SerializeStruct;
+use serde_json::Value;
+use std::error::Error;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// TRAITS FOR MODEL VALIDATION.
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///Trait to validate the fields of a request before sending it to the REST API.
+pub trait ValidateRequest: Serialize {
+	fn validate(&self) -> Result<(), Box<dyn Error>> {
+		Ok(())
+	}
+}
+
+/// Trait to validate the fields of a response coming from the REST API.
+pub trait ValidateResponse: DeserializeOwned {
+	/// Improved deserialization function that provides better error messages using serde_path_to_error.
+	fn deserialize<'de, T>(value: &'de Value) -> Result<T, Box<dyn Error>>
+	where
+		T: Deserialize<'de>,
+	{
+		let result = serde_path_to_error::deserialize(value);
+
+		match result {
+			Ok(value) => Ok(value),
+			Err(e) => Err(Box::new(ApiError {
+				message: format!("Failed to deserialize JSON serde_json::Value: {}", e),
+			})),
+		}
+	}
+
+	fn from_value(value: &Value) -> Result<Self, Box<dyn Error>> where Self: Sized {
+        let instance: Self = <Self as ValidateResponse>::deserialize(value)?;
+        
+        match instance.validate() {
+			Ok(()) => Ok(instance),
+			Err(e) => Err(Box::new(ApiError {
+				message: format!("Validation failed: {}", e),
+			})),
+		}
+    }
+
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        Ok(())
+    }
+}
+
+/// Struct to represent an empty object for use in optional parameters that must implement Serialize and ValidateRequest traits.
+#[derive(Serialize)]
+pub struct Empty {}
+
+impl ValidateRequest for Empty {}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// REST API MODELS.
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -38,6 +101,18 @@ pub struct AccountSwitchRequest {
 	pub default_account: Option<bool>,
 }
 
+impl ValidateRequest for AccountSwitchRequest {
+	fn validate(&self) -> Result<(), Box<dyn Error>> {
+		if !ACCOUNT_ID_REGEX.is_match(&self.account_id) {
+			return Err(Box::new(ApiError {
+				message: "Account ID field is invalid.".to_string(),
+			}));
+		}
+
+		Ok(())
+	}
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountSwitchResponse {
@@ -46,6 +121,8 @@ pub struct AccountSwitchResponse {
 	pub has_active_live_accounts: bool,
 	pub trailing_stops_enabled: bool,
 }
+
+impl ValidateResponse for AccountSwitchResponse {}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -62,6 +139,24 @@ pub struct AuthenticationRequest {
 	pub password: String,
 }
 
+impl ValidateRequest for AuthenticationRequest {
+	fn validate(&self) -> Result<(), Box<dyn Error>> {
+		if !IDENTIFIER_REGEX.is_match(&self.identifier) {
+			return Err(Box::new(ApiError {
+				message: "Username field is invalid.".to_string(),
+			}));
+		}
+
+		if !PASSWORD_REGEX.is_match(&self.password) {
+			return Err(Box::new(ApiError {
+				message: "Password field is invalid.".to_string(),
+			}));
+		}
+
+		Ok(())
+	}
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthenticationResponseV3 {
@@ -71,6 +166,8 @@ pub struct AuthenticationResponseV3 {
 	pub oauth_token: OauthToken,
 	pub timezone_offset: f64
 }
+
+impl ValidateResponse for AuthenticationResponseV3 {}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -787,6 +884,8 @@ pub struct SessionDetailsRequest {
 	pub fetch_session_tokens: bool,
 }
 
+impl ValidateRequest for SessionDetailsRequest {}
+
 /// User's session details response.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -805,6 +904,8 @@ pub struct SessionDetailsResponse {
 	pub timezone_offset: f64
 }
 
+impl ValidateResponse for SessionDetailsResponse {}
+
 /// The encryption key to use in order to send the user password in an encrypted form
 #[derive(Debug, Deserialize, Serialize)]
 pub struct SessionEncryptionKeyResponse {
@@ -813,6 +914,8 @@ pub struct SessionEncryptionKeyResponse {
 	/// Current timestamp in milliseconds since epoch.
 	pub timestamp: u64,
 }
+
+impl ValidateResponse for SessionEncryptionKeyResponse {}
 
 /// OAuth access token.
 #[derive(Debug, Deserialize)]

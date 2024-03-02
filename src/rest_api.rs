@@ -55,7 +55,7 @@ impl RestApi {
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
         // Deserialize the response_value to EncryptionKeyResponse.
-        let encryption_key_response: SessionEncryptionKeyResponse = deserialize(&response_value)?;
+        let encryption_key_response = SessionEncryptionKeyResponse::from_value(&response_value)?;
 
         Ok((headers, encryption_key_response))
     }
@@ -74,7 +74,7 @@ impl RestApi {
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
         // Convert the serde_json::Value response to Session model.
-        let session: SessionDetailsResponse = deserialize(&response_value)?;
+        let session = SessionDetailsResponse::from_value(&response_value)?;
 
         Ok((headers, session))
     }
@@ -89,6 +89,9 @@ impl RestApi {
         &self,
         body: &AccountSwitchRequest,
     ) -> Result<(Value, AccountSwitchResponse), Box<dyn Error>> {
+        // Validate the body.
+        body.validate()?;
+
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
@@ -98,7 +101,7 @@ impl RestApi {
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
         // Deserialize the response_value to AccountSwitchResponse.
-        let account_switch_response: AccountSwitchResponse = deserialize(&response_value)?;
+        let account_switch_response = AccountSwitchResponse::from_value(&response_value)?;
 
         Ok((headers, account_switch_response))
     }

@@ -1,5 +1,5 @@
 use crate::common::*;
-use crate::rest_models::{AuthenticationRequest, AuthenticationResponseV3};
+use crate::rest_models::{AuthenticationRequest, AuthenticationResponseV3, ValidateRequest, ValidateResponse};
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::StatusCode;
 use serde::Serialize;
@@ -104,10 +104,14 @@ impl RestClient {
         &self,
         method: String,
         api_version: Option<usize>,
-        params: &Option<impl Serialize>,
+        params: &Option<impl Serialize + ValidateRequest>,
     ) -> Result<(HeaderMap, Value), Box<dyn Error>> {
         // Default API version is 1.
         let api_version = api_version.unwrap_or(1).to_string();
+        // Validate the params.
+        if let Some(params) = params {
+            params.validate()?;
+        }
         // Convert params to a query string.
         let query_string = params_to_query_string(params)?;
 
@@ -136,7 +140,7 @@ impl RestClient {
         }
     }
 
-    /// Log in to the IG REST API.
+    /// Log in to the REST API.
     pub async fn login(&mut self) -> Result<Value, Box<dyn Error>> {
         println!("Logging in with session version: {}", self.session_version);
 
@@ -149,13 +153,16 @@ impl RestClient {
         }
     }
 
-    /// Log in to the IG REST API using session version 2.
+    /// Log in to the REST API using session version 2.
     pub async fn login_v2(&mut self) -> Result<Value, Box<dyn Error>> {
         // Create the login request body.
         let login_request_body = AuthenticationRequest {
             identifier: self.config.username.clone(),
             password: self.config.password.clone(),
         };
+
+        // Validate the login request body.
+        login_request_body.validate()?;
 
         // Send the login request.
         let response = self
@@ -205,13 +212,16 @@ impl RestClient {
         }
     }
 
-    /// Log in to the IG REST API using session version 2.
+    /// Log in to the REST API using session version 2.
     pub async fn login_v3(&mut self) -> Result<Value, Box<dyn Error>> {
         // Create the login request body.
         let login_request_body = AuthenticationRequest {
             identifier: self.config.username.clone(),
             password: self.config.password.clone(),
         };
+
+        // Validate the login request body.
+        login_request_body.validate()?;
 
         // Send the login request.
         let response = self
@@ -229,7 +239,7 @@ impl RestClient {
             StatusCode::OK => {
                 // Deserialize the response body to a LoginResponseV3.
                 let response_body = response.json().await?;
-                let login_response: AuthenticationResponseV3 = deserialize(&response_body)?;
+                let login_response = AuthenticationResponseV3::from_value(&response_body)?;
 
                 // Get access_token from the login response and set it as the Bearer token in Authorization header.
                 let mut auth_headers = HeaderMap::new();
@@ -259,15 +269,17 @@ impl RestClient {
         }
     }
 
-    /// Send a POST request to the IG REST API.
+    /// Send a POST request to the REST API.
     pub async fn post(
         &self,
         method: String,
         version: Option<usize>,
-        body: &impl Serialize,
+        body: &(impl Serialize + ValidateRequest),
     ) -> Result<(HeaderMap, Value), Box<dyn Error>> {
         // Default API version is 1.
         let version = version.unwrap_or(1).to_string();
+        // Validate the body.
+        body.validate()?;
         // Convert the body to a serde_json::Value.
         let body = serde_json::to_value(body)?;
 
@@ -298,15 +310,17 @@ impl RestClient {
         }
     }
 
-    /// Send a PUT request to the IG REST API.
+    /// Send a PUT request to the REST API.
     pub async fn put(
         &self,
         method: String,
-        body: impl Serialize,
+        body: &(impl Serialize + ValidateRequest),
         version: Option<usize>,
     ) -> Result<(HeaderMap, Value), Box<dyn Error>> {
         // Default API version is 1.
         let version = version.unwrap_or(1).to_string();
+        // Validate the body.
+        body.validate()?;
 
         // Send the PUT request.
         let response = self

@@ -114,32 +114,11 @@ impl std::fmt::Display for ApiError {
 /// Implement the Error trait for ApiError to handle errors.
 impl std::error::Error for ApiError {}
 
-/// Struct to represent an empty object for use in optional parameters that must implement Serialize trait.
-#[derive(Serialize)]
-pub struct Empty {}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // UTILITY FUNCTIONS.
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/// Improved deserialization function that provides better error messages using serde_path_to_error.
-pub fn deserialize<'de, T>(value: &'de Value) -> Result<T, Box<dyn Error>>
-where
-    T: Deserialize<'de>,
-{
-    // Deserialize the value using serde_path_to_error.
-    let result = serde_path_to_error::deserialize(value);
-
-    // Return the result.
-    match result {
-        Ok(value) => Ok(value),
-        Err(e) => Err(Box::new(ApiError {
-            message: format!("Failed to deserialize JSON serde_json::Value: {}", e),
-        })),
-    }
-}
 
 /// Convert a serializable object representing GET parameters to a query string.
 pub fn params_to_query_string<T: Serialize>(data: &T) -> Result<String, serde_urlencoded::ser::Error> {

@@ -136,7 +136,7 @@ async fn aaa_rest_api_is_properly_initialized() {
 }
 
 #[tokio::test]
-async fn get_session_works() {
+async fn session_get_works() {
     // Get the API instance.
     let api = get_or_init_rest_api().await;
 
@@ -184,7 +184,7 @@ async fn get_session_works() {
 }
 
 #[tokio::test]
-async fn put_session_works() {
+async fn session_put_works() {
     // Get the API instance.
     let api = get_or_init_rest_api().await;
 
@@ -227,7 +227,7 @@ async fn put_session_works() {
 /// Force this test to run last by using zzz_ prefix to ensure the session
 /// is not deleted before running other tests.
 #[tokio::test]
-async fn zzz_delete_session_works() {
+async fn zzz_session_delete_works() {
     // Get the API instance.
     let api = get_or_init_rest_api().await;
 
