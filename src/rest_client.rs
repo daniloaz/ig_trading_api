@@ -28,6 +28,8 @@ pub struct RestClient {
     pub common_headers: HeaderMap,
     /// The API configuration.
     pub config: ApiConfig,
+    /// The refresh token to use for refreshing the session when session_version is 3.
+    pub refresh_token: Option<String>,
     /// Session version.
     pub session_version: usize,
 }
@@ -55,7 +57,7 @@ impl RestClient {
             // If the status code is not 204 No Content, return an error.
             _ => Err(Box::new(ApiError {
                 message: format!(
-                    "DELETE operation using method '{}' failed with status code: {}",
+                    "DELETE operation using method '{}' failed with status code: {:?}",
                     method,
                     response.status()
                 ),
@@ -90,6 +92,7 @@ impl RestClient {
             client: reqwest::Client::new(),
             common_headers,
             config,
+            refresh_token: None,
             session_version,
         };
 
@@ -133,7 +136,7 @@ impl RestClient {
             // If the status code is not 200 OK, return an error.
             _ => Err(Box::new(ApiError {
                 message: format!(
-                    "GET operation using method '{}' and query_string '{}' failed with status code: {}",
+                    "GET operation using method '{}' and query_string '{}' failed with status code: {:?}",
                     method,
                     query_string,
                     response.status()
@@ -209,7 +212,7 @@ impl RestClient {
             }
             // If the status code is not 200 OK, return an error.
             _ => Err(Box::new(ApiError {
-                message: format!("Login failed with status code: {}", response.status()),
+                message: format!("Login failed with status code: {:?}", response.status()),
             })),
         }
     }
@@ -262,11 +265,13 @@ impl RestClient {
 
                 self.auth_headers = Some(auth_headers);
 
+                self.refresh_token = Some(login_response.oauth_token.refresh_token);
+
                 Ok(response_body)
             }
             // If the status code is not 200 OK, return an error.
             _ => Err(Box::new(ApiError {
-                message: format!("Login failed with status code: {}", response.status()),
+                message: format!("Login failed with status code: {:?}", response.status()),
             })),
         }
     }
@@ -302,7 +307,7 @@ impl RestClient {
             // If the status code is not 200 OK, return an error.
             _ => Err(Box::new(ApiError {
                 message: format!(
-                    "POST operation using method '{}', version '{}' and body '{:?}' failed with status code: {}",
+                    "POST operation using method '{}', version '{}' and body '{:?}' failed with status code: {:?}",
                     method,
                     version,
                     body,

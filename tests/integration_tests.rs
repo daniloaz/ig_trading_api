@@ -2,6 +2,7 @@ use ig_trading_api::common::*;
 use ig_trading_api::rest_api::*;
 use ig_trading_api::rest_models::*;
 use regex::Regex;
+use serde_json::Value;
 use std::sync::Arc;
 use tokio::sync::OnceCell;
 
@@ -142,31 +143,6 @@ async fn aaa_rest_api_is_properly_initialized() {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #[tokio::test]
-async fn session_encryption_key_get_works() {
-    // Get the API instance.
-    let api = get_or_init_rest_api().await;
-
-    let response = match api.session_encryption_key_get().await {
-        Ok(response) => response,
-        Err(e) => {
-            println!("Error getting session encryption key: {:?}", e);
-            panic!("Test failed due to error.");
-        }
-    };
-
-    println!(
-        "Response headers: {}",
-        serde_json::to_string_pretty(&response.0).unwrap()
-    );
-    println!(
-        "Response body: {}",
-        serde_json::to_string_pretty(&response.1).unwrap()
-    );
-
-    sleep();
-}
-
-#[tokio::test]
 async fn session_get_works() {
     // Get the API instance.
     let api = get_or_init_rest_api().await;
@@ -239,6 +215,69 @@ async fn session_put_works() {
                 "Error switching session to account '{}': {:?}",
                 new_account_number, e
             );
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response.0).unwrap()
+    );
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response.1).unwrap()
+    );
+
+    sleep();
+}
+
+#[tokio::test]
+async fn session_encryption_key_get_works() {
+    // Get the API instance.
+    let api = get_or_init_rest_api().await;
+
+    let response = match api.session_encryption_key_get().await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error getting session encryption key: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response.0).unwrap()
+    );
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response.1).unwrap()
+    );
+
+    sleep();
+}
+
+#[tokio::test]
+async fn session_refresh_token_post_works() {
+    // Get the API instance.
+    let api = get_or_init_rest_api().await;
+
+    // If config session_version is not 3, then skip this test.
+    if api.client.config.session_version.unwrap_or(0) != 3 {
+        println!("Skipping test because session_version is not 3 in configuration file.");
+        return;
+    }
+
+    let body = SessionRefreshTokenRequest {
+        refresh_token: api.client.refresh_token.as_ref().unwrap().clone(),
+    };
+
+    println!("Refresh token: {:?}", body.refresh_token);
+    println!("Auth headers: {:?}", api.client.auth_headers.as_ref().unwrap());
+
+    let response: (Value, SessionRefreshTokenResponse) = match api.session_refresh_token_post(&body).await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error refreshing session token: {:?}", e);
             panic!("Test failed due to error.");
         }
     };

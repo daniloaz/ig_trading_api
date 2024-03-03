@@ -40,26 +40,7 @@ impl RestApi {
 
         Ok((headers, ()))
     }
-
-    /// Creates a trading session, obtaining session tokens for subsequent API access.
-    /// Please note, region-specific login restrictions may apply.
-    pub async fn session_encryption_key_get(
-        &self,
-    ) -> Result<(Value, SessionEncryptionKeyResponse), Box<dyn Error>> {
-        // Send the request to the REST client.
-        let (header_map, response_value) = self
-            .client
-            .get("session/encryptionKey".to_string(), Some(1), &None::<Empty>)
-            .await?;
-
-        // Convert header_map to json.
-        let headers: Value = headers_to_json(&header_map)?;
-        // Deserialize the response_value to EncryptionKeyResponse.
-        let encryption_key_response = SessionEncryptionKeyResponse::from_value(&response_value)?;
-
-        Ok((headers, encryption_key_response))
-    }
-
+    
     /// Get session details for the current session.
     pub async fn session_get(
         &self,
@@ -105,4 +86,48 @@ impl RestApi {
 
         Ok((headers, account_switch_response))
     }
+
+    /// Creates a trading session, obtaining session tokens for subsequent API access.
+    /// Please note, region-specific login restrictions may apply.
+    pub async fn session_encryption_key_get(
+        &self,
+    ) -> Result<(Value, SessionEncryptionKeyResponse), Box<dyn Error>> {
+        // Send the request to the REST client.
+        let (header_map, response_value) = self
+            .client
+            .get("session/encryptionKey".to_string(), Some(1), &None::<Empty>)
+            .await?;
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+        // Deserialize the response_value to EncryptionKeyResponse.
+        let encryption_key_response = SessionEncryptionKeyResponse::from_value(&response_value)?;
+
+        Ok((headers, encryption_key_response))
+    }
+
+    pub async fn session_refresh_token_post(
+        &self,
+        body: &SessionRefreshTokenRequest,
+    ) -> Result<(Value, SessionRefreshTokenResponse), Box<dyn Error>> {
+        // Validate the body.
+        body.validate()?;
+
+        // Send the request to the REST client.
+        let (headers, response_value) = self
+            .client
+            .post("session/refresh-token".to_string(), Some(1), body)
+            .await?;
+
+        println!("headers: {:?}", headers);
+        println!("response_value: {:?}", response_value);
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&headers)?;
+        // Deserialize the response_value to SessionRefreshTokenResponse.
+        let session_refresh_token_response = SessionRefreshTokenResponse::from_value(&response_value)?;
+
+        Ok((headers, session_refresh_token_response))
+    }
+
 }

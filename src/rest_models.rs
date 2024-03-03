@@ -1251,7 +1251,7 @@ impl ValidateRequest for AuthenticationRequest {
 }
 
 /// Response to the authentication request when using session_version 3.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthenticationResponseV3 {
     pub account_id: String,
@@ -1264,7 +1264,7 @@ pub struct AuthenticationResponseV3 {
 /// Validate the authentication response.
 impl ValidateResponse for AuthenticationResponseV3 {}
 
-// User's session details request with optionally tokens by
+/// User's session details request with optionally tokens by
 /// making a GET request to the /session endpoint.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -1277,7 +1277,7 @@ impl ValidateRequest for SessionDetailsRequest {}
 
 /// OAuth access token, which is part of the response to the authentication request
 /// when using session_version 3.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct OauthToken {
     /// Access token.
     pub access_token: String,
@@ -1324,3 +1324,42 @@ pub struct SessionEncryptionKeyResponse {
 
 /// Validate the session encryption key response.
 impl ValidateResponse for SessionEncryptionKeyResponse {}
+
+/// Request a new session token by making a POST request
+/// to the /session/refresh-token endpoint.
+#[derive(Debug, Serialize)]
+pub struct SessionRefreshTokenRequest {
+    /// Refresh token
+    pub refresh_token: String,
+}
+
+/// Validate the session refresh token request.
+impl ValidateRequest for SessionRefreshTokenRequest {
+	fn validate(&self) -> Result<(), Box<dyn Error>> {
+		if self.refresh_token.is_empty() {
+			return Err(Box::new(ApiError {
+				message: "Refresh token field is empty.".to_string(),
+			}));
+		}
+
+		Ok(())
+	}
+}
+
+/// Access token response.
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SessionRefreshTokenResponse {
+	/// Access token.
+    pub access_token: String,
+    /// Access token expiry in seconds.
+    pub expires_in: String,
+    /// Refresh token.
+    pub refresh_token: String,
+    /// Scope of the access token.
+    pub scope: String,
+    /// Token type.
+    pub token_type: String,
+}
+
+/// Validate the session encryption key response.
+impl ValidateResponse for SessionRefreshTokenResponse {}
