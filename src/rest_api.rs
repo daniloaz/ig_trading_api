@@ -26,6 +26,30 @@ impl RestApi {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     //
+    // ACCOUNT METHODS.
+    //
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /// Returns a list of the logged-in client's accounts.
+    pub async fn accounts_get(
+        &self,
+    ) -> Result<(Value, AccountsResponse), Box<dyn Error>> {
+        // Send the request to the REST client.
+        let (header_map, response_value) = self
+            .client
+            .get("accounts".to_string(), Some(1), &None::<Empty>)
+            .await?;
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+        // Convert the serde_json::Value response to Session model.
+        let accounts = AccountsResponse::from_value(&response_value)?;
+
+        Ok((headers, accounts))
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //
     // SESSION METHODS.
     //
     ////////////////////////////////////////////////////////////////////////////////////////////////////////

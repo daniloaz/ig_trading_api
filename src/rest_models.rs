@@ -69,51 +69,7 @@ impl ValidateRequest for Empty {}
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Account {
-    pub account_alias: Option<String>,
-    pub account_id: String,
-    pub account_name: String,
-    pub account_type: AccountType,
-    pub balance: Balance,
-    pub can_transfer_from: bool,
-    pub can_transfer_to: bool,
-    pub currency: String,
-    pub preferred: bool,
-    pub status: AccountStatus,
-}
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Accounts {
-    pub accounts: Vec<Account>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum AccountStatus {
-    Disabled,
-    Enabled,
-    SuspendedFromDealing,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum AccountType {
-    Cfd,
-    Physical,
-    Spreadbet,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Balance {
-    pub available: f64,
-    pub balance: f64,
-    pub deposit: f64,
-    pub profit_loss: f64,
-}
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -1181,6 +1137,65 @@ pub enum CreateWatchlistStatus {
 #[serde(rename_all = "camelCase")]
 pub struct AddToWatchlist {
     pub epic: String,
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// ACCOUNT ENDPOINT MODELS.
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/// Account data.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Account {
+    pub account_alias: Option<String>,
+    pub account_id: String,
+    pub account_name: String,
+    pub account_type: AccountType,
+    pub balance: Balance,
+    pub can_transfer_from: bool,
+    pub can_transfer_to: bool,
+    pub currency: String,
+    pub preferred: bool,
+    pub status: AccountStatus,
+}
+
+/// Response to the GET /accounts request.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountsResponse {
+    pub accounts: Vec<Account>,
+}
+
+impl ValidateResponse for AccountsResponse {}
+
+/// Account status.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum AccountStatus {
+    Disabled,
+    Enabled,
+    SuspendedFromDealing,
+}
+
+/// Account type.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum AccountType {
+    Cfd,
+    Physical,
+    Spreadbet,
+}
+
+/// Account balances.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Balance {
+    pub available: f64,
+    pub balance: f64,
+    pub deposit: f64,
+    pub profit_loss: f64,
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
