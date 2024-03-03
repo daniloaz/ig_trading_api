@@ -57,9 +57,10 @@ impl RestClient {
             // If the status code is not 204 No Content, return an error.
             _ => Err(Box::new(ApiError {
                 message: format!(
-                    "DELETE operation using method '{}' failed with status code: {:?}",
+                    "DELETE operation using method '{}' failed with status code: {:?} - {:?}",
                     method,
-                    response.status()
+                    response.status(),
+                    response.text().await?
                 ),
             })),
         }
@@ -136,10 +137,11 @@ impl RestClient {
             // If the status code is not 200 OK, return an error.
             _ => Err(Box::new(ApiError {
                 message: format!(
-                    "GET operation using method '{}' and query_string '{}' failed with status code: {:?}",
+                    "GET operation using method '{}' and query_string '{}' failed with status code: {:?} - {:?}",
                     method,
                     query_string,
-                    response.status()
+                    response.status(),
+                    response.text().await?
                 ),
             })),
         }
@@ -212,7 +214,10 @@ impl RestClient {
             }
             // If the status code is not 200 OK, return an error.
             _ => Err(Box::new(ApiError {
-                message: format!("Login failed with status code: {:?}", response.status()),
+                message: format!("Login failed with status code: {:?} - {:?}",
+                    response.status(),
+                    response.text().await?
+                )
             })),
         }
     }
@@ -271,7 +276,10 @@ impl RestClient {
             }
             // If the status code is not 200 OK, return an error.
             _ => Err(Box::new(ApiError {
-                message: format!("Login failed with status code: {:?}", response.status()),
+                message: format!("Login failed with status code: {:?} - {:?}",
+                    response.status(),
+                    response.text().await?,
+                ),
             })),
         }
     }
@@ -307,11 +315,12 @@ impl RestClient {
             // If the status code is not 200 OK, return an error.
             _ => Err(Box::new(ApiError {
                 message: format!(
-                    "POST operation using method '{}', version '{}' and body '{:?}' failed with status code: {:?}",
+                    "POST operation using method '{}', version '{}' and body '{:?}' failed with status code: {:?} - {:?}",
                     method,
                     version,
                     body,
-                    response.status()
+                    response.status(),
+                    response.text().await?
                 ),
             })),
         }
@@ -347,11 +356,12 @@ impl RestClient {
             // If the status code is not 200 OK, return an error.
             _ => Err(Box::new(ApiError {
                 message: format!(
-                    "PUT operation using method '{}', version '{}' and body '{:?}' failed with status code: {}",
+                    "PUT operation using method '{}', version '{}' and body '{:?}' failed with status code: {:?} - {:?}",
                     method,
                     version,
                     serde_json::to_string(&body)?,
-                    response.status()
+                    response.status(),
+                    response.text().await?
                 ),
             })),
         }

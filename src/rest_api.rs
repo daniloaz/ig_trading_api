@@ -119,9 +119,6 @@ impl RestApi {
             .post("session/refresh-token".to_string(), Some(1), body)
             .await?;
 
-        println!("headers: {:?}", headers);
-        println!("response_value: {:?}", response_value);
-
         // Convert header_map to json.
         let headers: Value = headers_to_json(&headers)?;
         // Deserialize the response_value to SessionRefreshTokenResponse.

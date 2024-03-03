@@ -195,6 +195,12 @@ async fn session_put_works() {
     // Get the API instance.
     let api = get_or_init_rest_api().await;
 
+    // If config account_number_test is not set, then skip this test.
+    if api.config.account_number_test.is_none() {
+        println!("Skipping test because account_number_test is not set in configuration file.");
+        return;
+    }
+
     let new_account_number = match api.config.account_number_test.clone() {
         Some(account_number) => account_number,
         None => {
