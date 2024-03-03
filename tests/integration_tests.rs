@@ -168,6 +168,31 @@ async fn accounts_get_works() {
     sleep();
 }
 
+#[tokio::test]
+async fn accounts_preferences_get_works() {
+    // Get the API instance.
+    let api = get_or_init_rest_api().await;
+
+    let response = match api.accounts_preferences_get().await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error getting account preferences: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response.0).unwrap()
+    );
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response.1).unwrap()
+    );
+
+    sleep();
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // SESSION ENDPOINT INTEGRATION TESTS.

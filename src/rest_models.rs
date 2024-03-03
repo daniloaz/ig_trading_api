@@ -69,14 +69,6 @@ impl ValidateRequest for Empty {}
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Preferences {
-    pub trailing_stops_enabled: bool,
-}
-
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActivityHistoryQuery {
@@ -1161,15 +1153,6 @@ pub struct Account {
     pub status: AccountStatus,
 }
 
-/// Response to the GET /accounts request.
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AccountsResponse {
-    pub accounts: Vec<Account>,
-}
-
-impl ValidateResponse for AccountsResponse {}
-
 /// Account status.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -1187,6 +1170,23 @@ pub enum AccountType {
     Physical,
     Spreadbet,
 }
+
+/// Response to the GET /accounts request.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountsResponse {
+    pub accounts: Vec<Account>,
+}
+
+impl ValidateResponse for AccountsResponse {}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountsPreferencesResponse {
+    pub trailing_stops_enabled: bool,
+}
+
+impl ValidateResponse for AccountsPreferencesResponse {}
 
 /// Account balances.
 #[derive(Debug, Deserialize, Serialize)]
