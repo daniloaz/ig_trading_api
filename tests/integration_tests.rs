@@ -1,3 +1,4 @@
+use base64::{display::Base64Display, engine::general_purpose::STANDARD};
 use ig_trading_api::common::*;
 use ig_trading_api::rest_api::*;
 use ig_trading_api::rest_models::*;
@@ -258,6 +259,10 @@ async fn session_encryption_key_get_works() {
         "Response body: {}",
         serde_json::to_string_pretty(&response.1).unwrap()
     );
+
+    let encryption_key = response.1.encryption_key.as_bytes();
+    let decoded_encryption_key = Base64Display::new(encryption_key, &STANDARD);
+    println!("Decoded encryption key: {}", decoded_encryption_key);
 
     sleep();
 }
