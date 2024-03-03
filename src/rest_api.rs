@@ -48,6 +48,7 @@ impl RestApi {
         Ok((headers, accounts))
     }
 
+    /// Returns account preferences.
     pub async fn accounts_preferences_get(
         &self,
     ) -> Result<(Value, AccountsPreferencesResponse), Box<dyn Error>> {
@@ -63,6 +64,28 @@ impl RestApi {
         let accounts_preferences = AccountsPreferencesResponse::from_value(&response_value)?;
 
         Ok((headers, accounts_preferences))
+    }
+
+    /// Updates account preferences.
+    pub async fn accounts_preferences_put(
+        &self,
+        body: &AccountsPreferencesRequest,
+    ) -> Result<(Value, AccountsPreferencesStatusResponse), Box<dyn Error>> {
+        // Validate the body.
+        body.validate()?;
+
+        // Send the request to the REST client.
+        let (header_map, response_value) = self
+            .client
+            .put("accounts/preferences".to_string(), body, Some(1))
+            .await?;
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+        // Convert the serde_json::Value response to Session model.
+        let status = AccountsPreferencesStatusResponse::from_value(&response_value)?;
+
+        Ok((headers, status))
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////

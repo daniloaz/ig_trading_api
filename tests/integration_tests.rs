@@ -193,6 +193,144 @@ async fn accounts_preferences_get_works() {
     sleep();
 }
 
+#[tokio::test]
+async fn accounts_preferences_put_works() {
+    // Get the API instance.
+    let api = get_or_init_rest_api().await;
+
+    //
+    // First get the current account preferences.
+    //
+    let response_1 = match api.accounts_preferences_get().await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error getting account preferences: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response_1 headers: {}",
+        serde_json::to_string_pretty(&response_1.0).unwrap()
+    );
+    println!(
+        "Response_1 body: {}",
+        serde_json::to_string_pretty(&response_1.1).unwrap()
+    );
+
+    //
+    // According to the current account preferences, update the trailing_stops_enabled field.
+    //
+    let body_1;
+    let body_2;
+    match response_1.1.trailing_stops_enabled {
+        true => {
+            body_1 = AccountsPreferencesRequest {
+                trailing_stops_enabled: false,
+            };
+            body_2 = AccountsPreferencesRequest {
+                trailing_stops_enabled: true,
+            };
+        },
+        false => {
+            body_1 = AccountsPreferencesRequest {
+                trailing_stops_enabled: true,
+            };
+            body_2 = AccountsPreferencesRequest {
+                trailing_stops_enabled: false,
+            };
+        },
+    }
+
+    let response_2 = match api.accounts_preferences_put(&body_1).await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error updating account preferences: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response_2 headers: {}",
+        serde_json::to_string_pretty(&response_2.0).unwrap()
+    );
+    println!(
+        "Response_2 body: {}",
+        serde_json::to_string_pretty(&response_2.1).unwrap()
+    );
+
+    //
+    // Then get the updated account preferences.
+    //
+    let response_3 = match api.accounts_preferences_get().await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error getting account preferences: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response_3 headers: {}",
+        serde_json::to_string_pretty(&response_3.0).unwrap()
+    );
+    println!(
+        "Response_3 body: {}",
+        serde_json::to_string_pretty(&response_3.1).unwrap()
+    );
+
+    //
+    // Update the account preferences back to the original state.
+    //
+    let response_4 = match api.accounts_preferences_put(&body_2).await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error updating account preferences: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response_4 headers: {}",
+        serde_json::to_string_pretty(&response_4.0).unwrap()
+    );
+    println!(
+        "Response_4 body: {}",
+        serde_json::to_string_pretty(&response_4.1).unwrap()
+    );
+
+    //
+    // Finally, get the account preferences again to verify that the update was successful.
+    //
+    let response_5 = match api.accounts_preferences_get().await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error getting account preferences: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response_5 headers: {}",
+        serde_json::to_string_pretty(&response_5.0).unwrap()
+    );
+    println!(
+        "Response_5 body: {}",
+        serde_json::to_string_pretty(&response_5.1).unwrap()
+    );
+
+    //
+    // Verify that the original trailing_stops_enabled field differs from the updated field.
+    //
+    assert_eq!(response_1.1.trailing_stops_enabled, !response_3.1.trailing_stops_enabled);
+    //
+    // Verify that the trailing_stops_enabled field has the same value as the original account preferences.
+    //
+    assert_eq!(response_1.1.trailing_stops_enabled, response_5.1.trailing_stops_enabled);
+
+    sleep();
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // SESSION ENDPOINT INTEGRATION TESTS.

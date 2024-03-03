@@ -718,18 +718,6 @@ pub struct UpdateWorkingOrder {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct OkResponse {
-    pub status: ResponseStatus,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum ResponseStatus {
-    Success,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct Application {
     pub allow_equities: bool,
     pub allow_quote_orders: bool,
@@ -1141,15 +1129,25 @@ pub struct AddToWatchlist {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Account {
+    /// Account alias.
     pub account_alias: Option<String>,
+    /// Account identifier.
     pub account_id: String,
+    /// Account name.
     pub account_name: String,
+    /// Account type.
     pub account_type: AccountType,
+    /// Account balances.
     pub balance: Balance,
+    /// True if account can be transferred to.
     pub can_transfer_from: bool,
+    /// True if account can be transferred from.
     pub can_transfer_to: bool,
+    /// Account currency.
     pub currency: String,
+    /// True if this the default login account.
     pub preferred: bool,
+    /// Account status.
     pub status: AccountStatus,
 }
 
@@ -1157,8 +1155,11 @@ pub struct Account {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AccountStatus {
+    /// Disabled account.
     Disabled,
+    /// Enabled account.
     Enabled,
+    /// Account is suspended from dealing.
     SuspendedFromDealing,
 }
 
@@ -1166,8 +1167,11 @@ pub enum AccountStatus {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AccountType {
+    /// CFD account.
     Cfd,
+    /// Physical account.
     Physical,
+    /// Spread bet account.
     Spreadbet,
 }
 
@@ -1175,27 +1179,61 @@ pub enum AccountType {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountsResponse {
+    /// List of accounts.
     pub accounts: Vec<Account>,
 }
 
 impl ValidateResponse for AccountsResponse {}
 
+/// Edits the account preferences.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountsPreferencesRequest {
+    /// New trailing stop preference.
+    pub trailing_stops_enabled: bool,
+}
+
+impl ValidateRequest for AccountsPreferencesRequest {}
+
+/// Returns all account related preferences.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountsPreferencesResponse {
+    /// New trailing stop preference.
     pub trailing_stops_enabled: bool,
 }
 
 impl ValidateResponse for AccountsPreferencesResponse {}
 
+/// Returns the outcome of the account settings edit operation.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountsPreferencesStatusResponse {
+    /// Status of the request.
+    pub status: StatusResponse,
+}
+
+impl ValidateResponse for AccountsPreferencesStatusResponse {}
+
 /// Account balances.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Balance {
+    /// Amount available for trading.
     pub available: f64,
+    /// Balance of funds in the account.
     pub balance: f64,
+    /// Minimum deposit amount required for margins.
     pub deposit: f64,
+    /// Profit and loss amount.
     pub profit_loss: f64,
+}
+
+/// Status of the request. There is currently only one value but the list may be expanded in future.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum StatusResponse {
+    Success,
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
