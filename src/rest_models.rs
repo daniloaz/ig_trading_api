@@ -69,66 +69,6 @@ impl ValidateRequest for Empty {}
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug, Default, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TransactionHistoryQuery {
-    pub r#type: Option<TransactionType>,
-    pub from: Option<NaiveDateTime>,
-    pub to: Option<NaiveDateTime>,
-    pub max_span_seconds: Option<u64>,
-    pub page_size: Option<u32>,
-    pub page_number: Option<u32>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum TransactionType {
-    All,
-    AllDeal,
-    Deposit,
-    Withdrawal,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TransactionHistory {
-    pub metadata: TransactionMetadata,
-    pub transactions: Vec<Transaction>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TransactionMetadata {
-    pub page_data: TransactionPaging,
-    pub size: u32,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TransactionPaging {
-    pub page_number: u32,
-    pub page_size: u32,
-    pub total_pages: u32,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Transaction {
-    pub cash_transaction: bool,
-    pub close_level: String,
-    pub currency: String,
-    pub date: String,
-    pub date_utc: String,
-    pub instrument_name: String,
-    pub open_date_utc: String,
-    pub open_level: String,
-    pub period: String,
-    pub profit_and_loss: String,
-    pub reference: String,
-    pub size: String,
-    pub transaction_type: String,
-}
-
 #[derive(Debug, Default)]
 pub struct SentimentQuery {
     pub market_ids: Option<Vec<String>>,
@@ -1108,7 +1048,7 @@ pub enum StatusResponse {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// HISTORY ENDPOINT MODELS.
+// HISTORY ENDPOINT MODELS (ACTIVITY).
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1344,6 +1284,133 @@ pub enum Direction {
     Buy,
     /// Sell.
     Sell,
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// HISTORY ENDPOINT MODELS (TRANSACTIONS).
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/// Transaction data.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Transaction {
+    /// True if this was a cash transaction.
+    pub cash_transaction: bool,
+    /// Level at which the order was closed.
+    pub close_level: String,
+    /// Order currency.
+    pub currency: String,
+    /// Local date.
+    pub date: String,
+    /// UTC date.
+    pub date_utc: String,
+    /// Instrument name.
+    pub instrument_name: String,
+    /// Position opened date.
+    pub open_date_utc: String,
+    /// Level at which the order was opened.
+    pub open_level: String,
+    /// Period.
+    pub period: String,
+    /// Profit and loss.
+    pub profit_and_loss: String,
+    /// Reference.
+    pub reference: String,
+    /// Formatted order size, including the direction (+ for buy, - for sell)
+    pub size: String,
+    /// Transaction type.
+    pub transaction_type: String,
+}
+
+/// Returns the transaction history. Returns the minute prices within the last 10 minutes by default.
+#[derive(Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TransactionHistoryRequest {
+    /// Transaction type.
+    pub r#type: Option<TransactionType>,
+    /// Start date.
+    pub from: NaiveDateTime,
+    /// End date (date without time refers to the end of that day).
+    pub to: Option<NaiveDateTime>,
+    /// Limits the timespan in seconds through to current time
+    /// (not applicable if a date range has been specified).
+    pub max_span_seconds: Option<u64>,
+    /// Page size (disable paging = 0).
+    pub page_size: Option<u32>,
+    /// Page number.
+    pub page_number: Option<u32>,
+}
+
+impl ValidateRequest for TransactionHistoryRequest {
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        // Check if the 'from' date is not greater than today.
+        if self.from > Utc::now().naive_utc() {
+            return Err(Box::new(ApiError {
+                message: "'From' date cannot be greater than today.".to_string(),
+            }));
+        }
+
+        // Check if the 'from' date is not greater than 'to'.
+        if let Some(to) = self.to {
+            if self.from > to {
+                return Err(Box::new(ApiError {
+                    message: "'From' date cannot be greater than 'to' date.".to_string(),
+                }));
+            }
+        }
+
+        Ok(())
+    }
+}
+
+/// List of transactions.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TransactionHistoryResponse {
+    /// Paging metadata.
+    pub metadata: TransactionMetadata,
+    /// Transaction data.
+    pub transactions: Vec<Transaction>,
+}
+
+impl ValidateResponse for TransactionHistoryResponse {}
+
+/// Paging metadata.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TransactionMetadata {
+    /// Paging metadata.
+    pub page_data: TransactionPageData,
+    /// Size.
+    pub size: u32,
+}
+
+/// Paging metadata.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TransactionPageData {
+    /// Page number.
+    pub page_number: u32,
+    /// Page size.
+    pub page_size: u32,
+    /// Total number of pages.
+    pub total_pages: u32,
+}
+
+/// Transaction type.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum TransactionType {
+    /// All.
+    All,
+    /// Deals.
+    AllDeal,
+    /// Deposit.
+    Deposit,
+    /// Withdrawal.
+    Withdrawal,
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////

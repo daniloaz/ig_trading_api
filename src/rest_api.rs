@@ -113,6 +113,25 @@ impl RestApi {
         Ok((headers, history_activity))
     }
 
+    /// Returns the transaction history. Returns the minute prices within the last 10 minutes by default.
+    pub async fn history_transactions_get(
+        &self,
+        params: TransactionHistoryRequest,
+    ) -> Result<(Value, TransactionHistoryResponse), Box<dyn Error>> {
+        // Send the request to the REST client.
+        let (header_map, response_value) = self
+            .client
+            .get("history/transactions".to_string(), Some(2), &Some(params))
+            .await?;
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+        // Convert the serde_json::Value response to Session model.
+        let history_activity = TransactionHistoryResponse::from_value(&response_value)?;
+
+        Ok((headers, history_activity))
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     //
     // SESSION METHODS.
