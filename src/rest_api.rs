@@ -90,6 +90,31 @@ impl RestApi {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     //
+    // HISTORY METHODS.
+    //
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /// Returns the account activity history.
+    pub async fn history_activity_get(
+        &self,
+        params: ActivityHistoryRequest,
+    ) -> Result<(Value, ActivityHistoryResponse), Box<dyn Error>> {
+        // Send the request to the REST client.
+        let (header_map, response_value) = self
+            .client
+            .get("history/activity".to_string(), Some(3), &Some(params))
+            .await?;
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+        // Convert the serde_json::Value response to Session model.
+        let history_activity = ActivityHistoryResponse::from_value(&response_value)?;
+
+        Ok((headers, history_activity))
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //
     // SESSION METHODS.
     //
     ////////////////////////////////////////////////////////////////////////////////////////////////////////

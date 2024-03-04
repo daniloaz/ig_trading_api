@@ -333,6 +333,47 @@ async fn accounts_preferences_put_works() {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+// HISTORY ENDPOINT INTEGRATION TESTS.
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#[tokio::test]
+async fn history_activity_get_works() {
+    // Initialize the API instance.
+    let api = get_or_init_rest_api().await;
+
+    let params = ActivityHistoryRequest {
+        // 10 years ago.
+        from: chrono::Utc::now().naive_utc() - chrono::Duration::days(3650),
+        to: None,
+        detailed: None,
+        deal_id: None,
+        filter: None,
+        page_size: Some(10),
+    };
+
+    // Test without parameters.
+    let response = match api.history_activity_get(params).await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error getting activity history: {:?}", e);
+            panic!("Test failed due to an error.");
+        }
+    };
+
+    // Print the response for manual verification.
+    println!(
+        "Response headers without parameters: {}",
+        serde_json::to_string_pretty(&response.0).unwrap()
+    );
+    println!(
+        "Response body without parameters: {}",
+        serde_json::to_string_pretty(&response.1).unwrap()
+    );
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 // SESSION ENDPOINT INTEGRATION TESTS.
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////

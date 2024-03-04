@@ -1,6 +1,6 @@
 use crate::common::*;
 use crate::rest_regex::*;
-use chrono::NaiveDateTime;
+use chrono::{NaiveDateTime, Utc};
 use serde::de::DeserializeOwned;
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize, Serializer};
@@ -68,136 +68,6 @@ impl ValidateRequest for Empty {}
 // REST API MODELS.
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-#[derive(Debug, Default, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ActivityHistoryQuery {
-    pub from: Option<NaiveDateTime>,
-    pub to: Option<NaiveDateTime>,
-    pub detailed: Option<bool>,
-    pub deal_id: Option<String>,
-    pub filter: Option<String>,
-    pub page_size: Option<u32>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ActivityHistory {
-    pub activities: Vec<Activity>,
-    pub metadata: ActivityMetadata,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Activity {
-    pub channel: Channel,
-    pub date: String,
-    pub deal_id: String,
-    pub description: String,
-    pub details: Option<ActivityDetails>,
-    pub epic: String,
-    pub period: String,
-    pub status: ActivityStatus,
-    pub r#type: ActivityType,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum Channel {
-    Dealer,
-    Mobile,
-    PublicFixApi,
-    PublicWebApi,
-    System,
-    Web,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ActivityDetails {
-    pub actions: Vec<ActivityAction>,
-    pub currency: String,
-    pub deal_reference: String,
-    pub direction: Direction,
-    pub good_till_date: String,
-    pub guaranteed_stop: bool,
-    pub level: f64,
-    pub limit_distance: f64,
-    pub limit_level: f64,
-    pub market_name: String,
-    pub size: f64,
-    pub stop_distance: f64,
-    pub stop_level: f64,
-    pub trailing_step: f64,
-    pub trailing_stop_distance: f64,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ActivityAction {
-    pub action_type: ActivityActionType,
-    pub affected_deal_id: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum ActivityActionType {
-    LimitOrderAmended,
-    LimitOrderDeleted,
-    LimitOrderFilled,
-    LimitOrderOpened,
-    LimitOrderRolled,
-    PositionClosed,
-    PositionDeleted,
-    PositionOpened,
-    PositionPartiallyClosed,
-    PositionRolled,
-    StopLimitAmended,
-    StopOrderAmended,
-    StopOrderDeleted,
-    StopOrderFilled,
-    StopOrderOpened,
-    StopOrderRolled,
-    Unknown,
-    WorkingOrderDeleted,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum Direction {
-    Buy,
-    Sell,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum ActivityStatus {
-    Accepted,
-    Rejected,
-    Unknown,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum ActivityType {
-    EditStopAndLimit,
-    Position,
-    System,
-    WorkingOrder,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ActivityMetadata {
-    pub paging: ActivityPaging,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ActivityPaging {
-    pub next: Option<String>,
-    pub size: u32,
-}
 
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -1234,6 +1104,246 @@ pub struct Balance {
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum StatusResponse {
     Success,
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// HISTORY ENDPOINT MODELS.
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Activity {
+    /// The channel which triggered the activity.
+    pub channel: ActivityChannel,
+    /// The date of the activity item.
+    pub date: String,
+    /// Deal identifier.
+    pub deal_id: String,
+    /// Activity description.
+    pub description: String,
+    /// Activity details.
+    pub details: Option<ActivityDetails>,
+    /// Instrument epic identifier.
+    pub epic: String,
+    /// The period of the activity item, e.g. "DFB" or "02-SEP-11".
+    /// This will be the expiry time/date for sprint markets,
+    /// e.g. "2015-10-13T12:42:05"
+    pub period: String,
+    /// Activity status.
+    pub status: ActivityStatus,
+    /// Activity type.
+    pub r#type: ActivityType,
+}
+
+/// Deal affected by an activity.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ActivityAction {
+    /// Action type.
+    pub action_type: ActivityActionType,
+    /// Affected deal ID.
+    pub affected_deal_id: String,
+}
+
+/// Activity action type.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ActivityActionType {
+    /// Limit order amended.
+    LimitOrderAmended,
+    /// Limit order deleted.
+    LimitOrderDeleted,
+    /// Limit order filled.
+    LimitOrderFilled,
+    /// Limit order opened.
+    LimitOrderOpened,
+    /// Limit order rolled.
+    LimitOrderRolled,
+    /// Position amended.
+    PositionClosed,
+    /// Position deleted.
+    PositionDeleted,
+    /// Position opened.
+    PositionOpened,
+    /// Position partially closed.
+    PositionPartiallyClosed,
+    /// Position rolled.
+    PositionRolled,
+    /// Stop order amended.
+    StopLimitAmended,
+    /// Stop order deleted.
+    StopOrderAmended,
+    /// Stop order filled.
+    StopOrderDeleted,
+    /// Stop order opened.
+    StopOrderFilled,
+    /// Stop order rolled.
+    StopOrderOpened,
+    /// Stop order rolled.
+    StopOrderRolled,
+    /// Unknown.
+    Unknown,
+    /// Working order amended.
+    WorkingOrderDeleted,
+}
+
+/// The channel which triggered the activity.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ActivityChannel {
+    /// Dealer.
+    Dealer,
+    /// Mobile.
+    Mobile,
+    /// Public FIX API.
+    PublicFixApi,
+    /// Public Web API.
+    PublicWebApi,
+    /// System.
+    System,
+    /// Web.
+    Web,
+}
+
+/// Activity details.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ActivityDetails {
+    /// Deal affected by an activity.
+    pub actions: Vec<ActivityAction>,
+    /// Currency.
+    pub currency: String,
+    /// Deal reference.
+    pub deal_reference: String,
+    /// Deal direction.
+    pub direction: Direction,
+    /// Good till date.
+    pub good_till_date: String,
+    /// Guaranteed stop.
+    pub guaranteed_stop: bool,
+    /// Level.
+    pub level: f64,
+    /// Limit distance.
+    pub limit_distance: f64,
+    /// Limit level.
+    pub limit_level: f64,
+    /// Market name.
+    pub market_name: String,
+    /// Size.
+    pub size: f64,
+    /// Stop distance.
+    pub stop_distance: f64,
+    /// Stop level.
+    pub stop_level: f64,
+    /// Trailing step size.
+    pub trailing_step: f64,
+    /// Trailing stop distance.
+    pub trailing_stop_distance: f64,
+}
+
+#[derive(Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ActivityHistoryRequest {
+    /// Start date.
+    pub from: NaiveDateTime,
+    /// End date (Default = current time. A date without time
+    /// component refers to the end of that day.).
+    pub to: Option<NaiveDateTime>,
+    /// Indicates whether to retrieve additional details about the activity.
+    pub detailed: Option<bool>,
+    /// Deal ID.
+    pub deal_id: Option<String>,
+    /// FIQL filter (supported operators: ==|!=|,|;).
+    pub filter: Option<String>,
+    /// Page size (min: 10, max: 500).
+    pub page_size: Option<u32>,
+}
+
+impl ValidateRequest for ActivityHistoryRequest {
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        // Check if the 'from' date is not greater than today.
+        if self.from > Utc::now().naive_utc() {
+            return Err(Box::new(ApiError {
+                message: "'From' date cannot be greater than today.".to_string(),
+            }));
+        }
+
+        // Check if the 'from' date is not greater than 'to'.
+        if let Some(to) = self.to {
+            if self.from > to {
+                return Err(Box::new(ApiError {
+                    message: "'From' date cannot be greater than 'to' date.".to_string(),
+                }));
+            }
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ActivityHistoryResponse {
+    pub activities: Vec<Activity>,
+    pub metadata: ActivityMetadata,
+}
+
+impl ValidateResponse for ActivityHistoryResponse {}
+
+/// Paging metadata.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ActivityMetadata {
+    /// Paging metadata.
+    pub paging: ActivityPaging,
+}
+
+/// Paging metadata.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ActivityPaging {
+    /// Next page.
+    pub next: Option<String>,
+    /// Page size.
+    pub size: u32,
+}
+
+/// Activity status.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ActivityStatus {
+    /// Accepted.
+    Accepted,
+    /// Rejected.
+    Rejected,
+    /// Unknown.
+    Unknown,
+}
+
+/// Activity type.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ActivityType {
+    /// Amend stop or limit activity.
+    EditStopAndLimit,
+    /// Position activity.
+    Position,
+    /// System generated activity.
+    System,
+    /// Working order activity.
+    WorkingOrder,
+}
+
+/// Deal direction.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum Direction {
+    /// Buy.
+    Buy,
+    /// Sell.
+    Sell,
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
