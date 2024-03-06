@@ -90,6 +90,35 @@ impl RestApi {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     //
+    // CONFIRMS METHODS.
+    //
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /// Returns a deal confirmation for the given deal reference. Please note, this
+    /// should only be used if the deal confirmation isn't received via the streaming API.
+    pub async fn confirms_get(
+        &self,
+        params: ConfirmsRequest,
+    ) -> Result<(Value, ConfirmsResponse), Box<dyn Error>> {
+
+        let url = format!("confirms/{}", params.deal_reference);
+
+        // Send the request to the REST client.
+        let (header_map, response_value) = self
+            .client
+            .get(url, Some(1), &None::<Empty>)
+            .await?;
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+        // Convert the serde_json::Value response to Session model.
+        let confirmations = ConfirmsResponse::from_value(&response_value)?;
+
+        Ok((headers, confirmations))
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //
     // HISTORY METHODS.
     //
     ////////////////////////////////////////////////////////////////////////////////////////////////////////

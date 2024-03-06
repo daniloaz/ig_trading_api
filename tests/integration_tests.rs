@@ -333,6 +333,42 @@ async fn accounts_preferences_put_works() {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+// CONFIRMS ENDPOINT INTEGRATION TESTS.
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#[tokio::test]
+async fn confirms_get_works() {
+    // Get the API instance.
+    let api = get_or_init_rest_api().await;
+
+    // TODO: Replace the deal_reference with a valid deal reference.
+    let params = ConfirmsRequest {
+        deal_reference: "HNWDB3AV".to_string(),
+    };
+
+    let response = match api.confirms_get(params).await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error getting confirms: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response.0).unwrap()
+    );
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response.1).unwrap()
+    );
+
+    sleep();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 // HISTORY ENDPOINT INTEGRATION TESTS.
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -363,11 +399,11 @@ async fn history_activity_get_works() {
 
     // Print the response for manual verification.
     println!(
-        "Response headers without parameters: {}",
+        "Response headers: {}",
         serde_json::to_string_pretty(&response.0).unwrap()
     );
     println!(
-        "Response body without parameters: {}",
+        "Response body: {}",
         serde_json::to_string_pretty(&response.1).unwrap()
     );
 }
@@ -391,18 +427,18 @@ async fn history_transactions_get_works() {
     let response = match api.history_transactions_get(params).await {
         Ok(response) => response,
         Err(e) => {
-            println!("Error getting activity history: {:?}", e);
+            println!("Error getting transaction history: {:?}", e);
             panic!("Test failed due to an error.");
         }
     };
 
     // Print the response for manual verification.
     println!(
-        "Response headers without parameters: {}",
+        "Response headers: {}",
         serde_json::to_string_pretty(&response.0).unwrap()
     );
     println!(
-        "Response body without parameters: {}",
+        "Response body: {}",
         serde_json::to_string_pretty(&response.1).unwrap()
     );
 }

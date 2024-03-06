@@ -121,9 +121,15 @@ impl RestClient {
         // Convert params to a query string.
         let query_string = params_to_query_string(params)?;
 
+        let url = if query_string.is_empty() {
+            format!("{}/{}", &self.base_url, method)
+        } else {
+            format!("{}/{}?{}", &self.base_url, method, query_string)
+        };
+
         let response = self
             .client
-            .get(&format!("{}/{}?{}", &self.base_url, method, query_string))
+            .get(&url)
             .headers(self.auth_headers.clone().unwrap_or(HeaderMap::new()))
             .headers(self.common_headers.clone())
             .header("Version", api_version)
@@ -137,8 +143,8 @@ impl RestClient {
             // If the status code is not 200 OK, return an error.
             _ => Err(Box::new(ApiError {
                 message: format!(
-                    "GET operation using method '{}' and query_string '{}' failed with status code: {:?} - {:?}",
-                    method,
+                    "GET operation to url '{}' and query_string '{}' failed with status code: {:?} - {:?}",
+                    url,
                     query_string,
                     response.status(),
                     response.text().await?
