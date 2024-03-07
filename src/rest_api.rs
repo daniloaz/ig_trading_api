@@ -171,6 +171,7 @@ impl RestApi {
     pub async fn positions_get(
         &self,
     ) -> Result<(Value, PositionsResponse), Box<dyn Error>> {
+
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
@@ -181,6 +182,29 @@ impl RestApi {
         let headers: Value = headers_to_json(&header_map)?;
         // Convert the serde_json::Value response to Session model.
         let positions = PositionsResponse::from_value(&response_value)?;
+
+        Ok((headers, positions))
+    }
+
+    /// Returns a specific open position for the active account.
+    pub async fn position_get(
+        &self,
+        params: PositionRequest,
+    ) -> Result<(Value, PositionResponse), Box<dyn Error>> {
+
+        // Create the url based on the params.
+        let url = format!("positions/{}", params.deal_id);
+
+        // Send the request to the REST client.
+        let (header_map, response_value) = self
+            .client
+            .get(url, Some(2), &None::<Empty>)
+            .await?;
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+        // Convert the serde_json::Value response to Session model.
+        let positions = PositionResponse::from_value(&response_value)?;
 
         Ok((headers, positions))
     }

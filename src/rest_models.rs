@@ -1454,12 +1454,32 @@ pub enum PositionStatus {
     PartiallyClosed,
 }
 
+/// Request an open position for the active account by deal identifier.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PositionRequest {
+    /// Deal identifier.
+    pub deal_id: String,
+}
+
+impl ValidateRequest for PositionRequest {
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        if !DEAL_ID_REGEX.is_match(&self.deal_id) {
+            return Err(Box::new(ApiError {
+                message: "Deal ID field is invalid.".to_string(),
+            }));
+        }
+
+        Ok(())
+    }
+}
+
 /// List of all the positions for the active account.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PositionsResponse {
     /// List of positions.
-    pub positions: Vec<Position>,
+    pub positions: Vec<PositionResponse>,
 }
 
 impl ValidateResponse for PositionsResponse {}
@@ -1467,12 +1487,14 @@ impl ValidateResponse for PositionsResponse {}
 /// Open position data.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Position {
+pub struct PositionResponse {
     /// Market data.
     pub market: MarketData,
     /// Position data.
     pub position: PositionData,
 }
+
+impl ValidateResponse for PositionResponse {}
 
 /// Market data.
 #[derive(Debug, Deserialize, Serialize)]

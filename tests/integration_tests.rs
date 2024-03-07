@@ -474,6 +474,55 @@ async fn positions_get_works() {
     sleep();
 }
 
+#[tokio::test]
+async fn position_get_works() {
+    // Get the API instance.
+    let api = get_or_init_rest_api().await;
+
+    // First get the list of positions.
+    let response_1 = match api.positions_get().await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error getting list of positions: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    // Take the first position from the list.
+    let position = match response_1.1.positions.first() {
+        Some(position) => position,
+        None => {
+            println!("No positions found.");
+            panic!("Test failed due to error.");
+        }
+    };
+
+    let deal_id = position.position.deal_id.clone();
+
+    let params = PositionRequest { deal_id: deal_id.clone() };
+
+    let response_2 = match api.position_get(params).await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error getting position '{}': {:?}", deal_id, e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response_2.0).unwrap()
+    );
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response_2.1).unwrap()
+    );
+
+    assert_eq!(response_2.1.position.deal_id, deal_id);
+
+    sleep();
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // SESSION ENDPOINT INTEGRATION TESTS.
