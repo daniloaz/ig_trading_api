@@ -344,7 +344,7 @@ async fn confirms_get_works() {
 
     // TODO: Replace the deal_reference with a valid deal reference.
     let params = ConfirmsRequest {
-        deal_reference: "HNWDB3AV".to_string(),
+        deal_reference: "76GAP71HRC2SAQ4B".to_string(),
     };
 
     let response = match api.confirms_get(params).await {
@@ -441,6 +441,37 @@ async fn history_transactions_get_works() {
         "Response body: {}",
         serde_json::to_string_pretty(&response.1).unwrap()
     );
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// POSITIONS ENDPOINT INTEGRATION TESTS.
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#[tokio::test]
+async fn positions_get_works() {
+    // Get the API instance.
+    let api = get_or_init_rest_api().await;
+
+    let response = match api.positions_get().await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error getting list of positions: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response.0).unwrap()
+    );
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response.1).unwrap()
+    );
+
+    sleep();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////

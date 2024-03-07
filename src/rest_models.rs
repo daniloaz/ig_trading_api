@@ -107,126 +107,7 @@ pub struct Sentiment {
 
 
 
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum PositionStatus {
-    Amended,
-    Closed,
-    Deleted,
-    Open,
-    PartiallyClosed,
-}
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Positions {
-    pub positions: Vec<Position>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Position {
-    pub market: MarketData,
-    pub position: PositionData,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MarketData {
-    pub bid: Option<f64>,
-    pub delay_time: f64,
-    pub epic: String,
-    pub exchange_id: Option<String>,
-    pub expiry: String,
-    pub high: Option<f64>,
-    pub instrument_name: String,
-    pub instrument_type: InstrumentType,
-    pub lot_size: Option<f64>,
-    pub low: Option<f64>,
-    pub market_status: MarketStatus,
-    pub net_change: f64,
-    pub offer: Option<f64>,
-    pub percentage_change: f64,
-    pub scaling_factor: f64,
-    pub streaming_prices_available: bool,
-    pub update_time: String,
-    #[serde(rename = "updateTimeUTC")]
-    pub update_time_utc: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum InstrumentType {
-    Binary,
-    BungeeCapped,
-    BungeeCommodities,
-    BungeeCurrencies,
-    BungeeIndices,
-    Commodities,
-    Currencies,
-    Indices,
-    KnockoutsCommodities,
-    KnockoutsCurrencies,
-    KnockoutsIndices,
-    KnockoutsShares,
-    OptCommodities,
-    OptCurrencies,
-    OptIndices,
-    OptRates,
-    OptShares,
-    Rates,
-    Sectors,
-    Shares,
-    SprintMarket,
-    TestMarket,
-    Unknown,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum MarketStatus {
-    Closed,
-    EditsOnly,
-    Offline,
-    OnAuction,
-    OnAuctionNoEdits,
-    Suspended,
-    Tradeable,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PositionData {
-    pub contract_size: f64,
-    pub controlled_risk: bool,
-    pub created_date: String,
-    pub created_date_utc: String,
-    pub currency: String,
-    pub deal_id: String,
-    pub deal_reference: String,
-    pub direction: Direction,
-    pub level: f64,
-    pub limit_level: f64,
-    pub limited_risk_premium: f64,
-    pub size: f64,
-    pub stop_level: f64,
-    pub trailing_step: f64,
-    pub trailing_stop_distance: f64,
-}
-
-#[derive(Debug, Default, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ClosePosition {
-    pub deal_id: Option<String>,
-    pub direction: Option<Direction>,
-    pub epic: Option<String>,
-    pub expiry: Option<String>,
-    pub level: Option<f64>,
-    pub order_type: Option<OrderType>,
-    pub quote_id: Option<String>,
-    pub size: Option<f64>,
-    pub time_in_force: Option<TimeInForce>,
-}
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -1541,6 +1422,185 @@ pub enum TransactionType {
     Deposit,
     /// Withdrawal.
     Withdrawal,
+}
+
+#[derive(Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClosePosition {
+    pub deal_id: Option<String>,
+    pub direction: Option<Direction>,
+    pub epic: Option<String>,
+    pub expiry: Option<String>,
+    pub level: Option<f64>,
+    pub order_type: Option<OrderType>,
+    pub quote_id: Option<String>,
+    pub size: Option<f64>,
+    pub time_in_force: Option<TimeInForce>,
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// POSITIONS ENDPOINT MODELS.
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PositionStatus {
+    Amended,
+    Closed,
+    Deleted,
+    Open,
+    PartiallyClosed,
+}
+
+/// List of all the positions for the active account.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PositionsResponse {
+    /// List of positions.
+    pub positions: Vec<Position>,
+}
+
+impl ValidateResponse for PositionsResponse {}
+
+/// Open position data.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Position {
+    /// Market data.
+    pub market: MarketData,
+    /// Position data.
+    pub position: PositionData,
+}
+
+/// Market data.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MarketData {
+    /// Bid.
+    pub bid: Option<f64>,
+    /// Instrument price delay (minutes).
+    pub delay_time: f64,
+    /// Instrument epic identifier.
+    pub epic: String,
+    /// Instrument expiry period.
+    pub expiry: String,
+    /// High price.
+    pub high: Option<f64>,
+    /// Instrument name.
+    pub instrument_name: String,
+    /// Instrument type.
+    pub instrument_type: InstrumentType,
+    /// Instrument lot size.
+    pub lot_size: Option<f64>,
+    /// Low price.
+    pub low: Option<f64>,
+    /// Describes the current status of a given market.
+    pub market_status: MarketStatus,
+    /// Price net change.
+    pub net_change: f64,
+    /// Offer.
+    pub offer: Option<f64>,
+    /// Price percentage change.
+    pub percentage_change: f64,
+    /// Multiplying factor to determine actual pip value for the
+    /// levels used by the instrument.
+    pub scaling_factor: f64,
+    /// True if streaming prices are available, i.e. the market is
+    /// tradeable and the client has appropriate permissions.
+    pub streaming_prices_available: bool,
+    /// Local time of last instrument price update.
+    pub update_time: String,
+    /// UTC time of last instrument price update.
+    #[serde(rename = "updateTimeUTC")]
+    pub update_time_utc: String,
+}
+
+/// Instrument type.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum InstrumentType {
+    Binary,
+    BungeeCapped,
+    BungeeCommodities,
+    BungeeCurrencies,
+    BungeeIndices,
+    Commodities,
+    Currencies,
+    Indices,
+    KnockoutsCommodities,
+    KnockoutsCurrencies,
+    KnockoutsIndices,
+    KnockoutsShares,
+    OptCommodities,
+    OptCurrencies,
+    OptIndices,
+    OptRates,
+    OptShares,
+    Rates,
+    Sectors,
+    Shares,
+    SprintMarket,
+    TestMarket,
+    Unknown,
+}
+
+/// Describes the current status of a given market.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum MarketStatus {
+    // Closed.
+    Closed,
+    /// Open for edits.
+    EditsOnly,
+    /// Offline.
+    Offline,
+    /// In auction mode.
+    OnAuction,
+    /// In no-edits mode.
+    OnAuctionNoEdits,
+    /// Suspended.
+    Suspended,
+    /// Open for trades.
+    Tradeable,
+}
+
+/// Position data.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PositionData {
+    /// Size of the contract.
+    pub contract_size: f64,
+    /// True if position is risk controlled.
+    pub controlled_risk: bool,
+    /// Local date the position was opened.
+    pub created_date: String,
+    /// UTC date the position was opened.
+    #[serde(rename = "createdDateUTC")]
+    pub created_date_utc: String,
+    /// Position currency ISO code.
+    pub currency: String,
+    /// Deal identifier.
+    pub deal_id: String,
+    /// Deal reference.
+    pub deal_reference: String,
+    /// Deal direction.
+    pub direction: Direction,
+    /// Level at which the position was opened.
+    pub level: f64,
+    /// Limit level.
+    pub limit_level: f64,
+    /// Limited Risk Premium.
+    pub limited_risk_premium: f64,
+    /// Deal size.
+    pub size: f64,
+    /// Stop level.
+    pub stop_level: f64,
+    /// Trailing step size.
+    pub trailing_step: Option<f64>,
+    /// Trailing stop distance.
+    pub trailing_stop_distance: Option<f64>,
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////

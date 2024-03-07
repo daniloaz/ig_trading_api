@@ -163,6 +163,30 @@ impl RestApi {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     //
+    // POSITIONS METHODS.
+    //
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /// Returns all open positions for the active account.
+    pub async fn positions_get(
+        &self,
+    ) -> Result<(Value, PositionsResponse), Box<dyn Error>> {
+        // Send the request to the REST client.
+        let (header_map, response_value) = self
+            .client
+            .get("positions".to_string(), Some(2), &None::<Empty>)
+            .await?;
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+        // Convert the serde_json::Value response to Session model.
+        let positions = PositionsResponse::from_value(&response_value)?;
+
+        Ok((headers, positions))
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //
     // SESSION METHODS.
     //
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
