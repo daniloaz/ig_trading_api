@@ -755,42 +755,44 @@ pub enum AccountType {
 /// Response to the GET /accounts request.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct AccountsResponse {
+pub struct AccountsGetResponse {
     /// List of accounts.
     pub accounts: Vec<Account>,
 }
 
-impl ValidateResponse for AccountsResponse {}
+impl ValidateResponse for AccountsGetResponse {}
 
-/// Edits the account preferences.
+/// Edits the account preferences by sending a PUT request to
+/// the /accounts/preferences endpoint.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct AccountsPreferencesRequest {
+pub struct AccountsPreferencesPutRequest {
     /// New trailing stop preference.
     pub trailing_stops_enabled: bool,
 }
 
-impl ValidateRequest for AccountsPreferencesRequest {}
+impl ValidateRequest for AccountsPreferencesPutRequest {}
 
-/// Returns all account related preferences.
+/// Returns all account related preferences. Response to the GET /accounts/preferences request.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct AccountsPreferencesResponse {
+pub struct AccountsPreferencesGetResponse {
     /// New trailing stop preference.
     pub trailing_stops_enabled: bool,
 }
 
-impl ValidateResponse for AccountsPreferencesResponse {}
+impl ValidateResponse for AccountsPreferencesGetResponse {}
 
-/// Returns the outcome of the account settings edit operation.
+/// Returns the outcome of the account settings edit operation. Response to the
+/// PUT /accounts/preferences request.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct AccountsPreferencesStatusResponse {
+pub struct AccountsPreferencesStatusPutResponse {
     /// Status of the request.
-    pub status: StatusResponse,
+    pub status: AccountsPreferencesPutRequestStatus,
 }
 
-impl ValidateResponse for AccountsPreferencesStatusResponse {}
+impl ValidateResponse for AccountsPreferencesStatusPutResponse {}
 
 /// Account balances.
 #[derive(Debug, Deserialize, Serialize)]
@@ -809,7 +811,7 @@ pub struct Balance {
 /// Status of the request. There is currently only one value but the list may be expanded in future.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum StatusResponse {
+pub enum AccountsPreferencesPutRequestStatus {
     Success,
 }
 
@@ -845,20 +847,21 @@ pub enum AffectedDealStatus {
     PartiallyClosed,
 }
 
-/// Request to retrieve deal confirmations for the given deal reference. Please note, this should only
-/// be used if the deal confirmation isn't received via the streaming API.
+/// GET Request to /confirms/{dealReference} endpoint to retrieve deal confirmations for
+/// the given deal reference. Please note, this should only be used if the deal confirmation
+/// isn't received via the streaming API.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ConfirmsRequest {
+pub struct ConfirmsGetRequest {
     pub deal_reference: String,
 }
 
-impl ValidateRequest for ConfirmsRequest {}
+impl ValidateRequest for ConfirmsGetRequest {}
 
 /// Response to the GET /confirms request (Deal confirmation)
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ConfirmsResponse {
+pub struct ConfirmsGetResponse {
     /// Affected deals.
     pub affected_deals: Vec<AffectedDeal>,
     /// Transaction date.
@@ -901,7 +904,7 @@ pub struct ConfirmsResponse {
     pub trailing_stop: bool,
 }
 
-impl ValidateResponse for ConfirmsResponse {}
+impl ValidateResponse for ConfirmsGetResponse {}
 
 /// Describes the error (or success) condition for the specified trading operation.
 #[derive(Debug, Deserialize, Serialize)]
@@ -1194,9 +1197,10 @@ pub struct ActivityDetails {
     pub trailing_stop_distance: f64,
 }
 
+/// Returns the activity history by sending a GET request to the /history/activity endpoint.
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ActivityHistoryRequest {
+pub struct ActivityHistoryGetRequest {
     /// Start date.
     pub from: NaiveDateTime,
     /// End date (Default = current time. A date without time
@@ -1212,7 +1216,7 @@ pub struct ActivityHistoryRequest {
     pub page_size: Option<u32>,
 }
 
-impl ValidateRequest for ActivityHistoryRequest {
+impl ValidateRequest for ActivityHistoryGetRequest {
     fn validate(&self) -> Result<(), Box<dyn Error>> {
         // Check if the 'from' date is not greater than today.
         if self.from > Utc::now().naive_utc() {
@@ -1234,14 +1238,15 @@ impl ValidateRequest for ActivityHistoryRequest {
     }
 }
 
+/// Response to the GET /history/activity request.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ActivityHistoryResponse {
+pub struct ActivityHistoryGetResponse {
     pub activities: Vec<Activity>,
     pub metadata: ActivityMetadata,
 }
 
-impl ValidateResponse for ActivityHistoryResponse {}
+impl ValidateResponse for ActivityHistoryGetResponse {}
 
 /// Paging metadata.
 #[derive(Debug, Deserialize, Serialize)]
@@ -1335,10 +1340,10 @@ pub struct Transaction {
     pub transaction_type: String,
 }
 
-/// Returns the transaction history. Returns the minute prices within the last 10 minutes by default.
+/// Returns the transaction history by sending a GET request to the /history/transactions endpoint.
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct TransactionHistoryRequest {
+pub struct TransactionHistoryGetRequest {
     /// Transaction type.
     pub r#type: Option<TransactionType>,
     /// Start date.
@@ -1354,7 +1359,7 @@ pub struct TransactionHistoryRequest {
     pub page_number: Option<u32>,
 }
 
-impl ValidateRequest for TransactionHistoryRequest {
+impl ValidateRequest for TransactionHistoryGetRequest {
     fn validate(&self) -> Result<(), Box<dyn Error>> {
         // Check if the 'from' date is not greater than today.
         if self.from > Utc::now().naive_utc() {
@@ -1376,17 +1381,17 @@ impl ValidateRequest for TransactionHistoryRequest {
     }
 }
 
-/// List of transactions.
+/// List of transactions. Response to the GET /history/transactions request.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct TransactionHistoryResponse {
+pub struct TransactionHistoryGetResponse {
     /// Paging metadata.
     pub metadata: TransactionMetadata,
     /// Transaction data.
     pub transactions: Vec<Transaction>,
 }
 
-impl ValidateResponse for TransactionHistoryResponse {}
+impl ValidateResponse for TransactionHistoryGetResponse {}
 
 /// Paging metadata.
 #[derive(Debug, Deserialize, Serialize)]
@@ -1454,15 +1459,16 @@ pub enum PositionStatus {
     PartiallyClosed,
 }
 
-/// Request an open position for the active account by deal identifier.
+/// Request an open position for the active account by deal identifier by sending
+/// a GET request to the /positions/{dealId} endpoint.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PositionRequest {
+pub struct PositionGetRequest {
     /// Deal identifier.
     pub deal_id: String,
 }
 
-impl ValidateRequest for PositionRequest {
+impl ValidateRequest for PositionGetRequest {
     fn validate(&self) -> Result<(), Box<dyn Error>> {
         if !DEAL_ID_REGEX.is_match(&self.deal_id) {
             return Err(Box::new(ApiError {
@@ -1474,27 +1480,27 @@ impl ValidateRequest for PositionRequest {
     }
 }
 
-/// List of all the positions for the active account.
+/// List of all the positions for the active account. Response to the GET /positions request.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PositionsResponse {
+pub struct PositionsGetResponse {
     /// List of positions.
-    pub positions: Vec<PositionResponse>,
+    pub positions: Vec<PositionGetResponse>,
 }
 
-impl ValidateResponse for PositionsResponse {}
+impl ValidateResponse for PositionsGetResponse {}
 
-/// Open position data.
+/// Open position data. Response to the GET /positions/{dealId} request.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PositionResponse {
+pub struct PositionGetResponse {
     /// Market data.
     pub market: MarketData,
     /// Position data.
     pub position: PositionData,
 }
 
-impl ValidateResponse for PositionResponse {}
+impl ValidateResponse for PositionGetResponse {}
 
 /// Market data.
 #[derive(Debug, Deserialize, Serialize)]
@@ -1631,16 +1637,16 @@ pub struct PositionData {
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/// Switch the active account by making a PUT request to the /session endpoint.
+/// Switch the active account by sending a PUT request to the /session endpoint.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct AccountSwitchRequest {
+pub struct AccountSwitchPutRequest {
     pub account_id: String,
     pub default_account: Option<bool>,
 }
 
 /// Validate the account switch request.
-impl ValidateRequest for AccountSwitchRequest {
+impl ValidateRequest for AccountSwitchPutRequest {
     fn validate(&self) -> Result<(), Box<dyn Error>> {
         if !ACCOUNT_ID_REGEX.is_match(&self.account_id) {
             return Err(Box::new(ApiError {
@@ -1652,10 +1658,10 @@ impl ValidateRequest for AccountSwitchRequest {
     }
 }
 
-/// Response to the account switch request.
+/// Response to the PUT /session request for account switching.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct AccountSwitchResponse {
+pub struct AccountSwitchPutResponse {
     pub dealing_enabled: bool,
     pub has_active_demo_accounts: bool,
     pub has_active_live_accounts: bool,
@@ -1663,18 +1669,18 @@ pub struct AccountSwitchResponse {
 }
 
 /// Validate the account switch response.
-impl ValidateResponse for AccountSwitchResponse {}
+impl ValidateResponse for AccountSwitchPutResponse {}
 
-/// Authenticate the user by making a POST request to the /session endpoint.
+/// Authenticate the user by sending a POST request to the /session endpoint.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct AuthenticationRequest {
+pub struct AuthenticationPostRequest {
     pub identifier: String,
     pub password: String,
 }
 
 /// Validate the authentication request.
-impl ValidateRequest for AuthenticationRequest {
+impl ValidateRequest for AuthenticationPostRequest {
     fn validate(&self) -> Result<(), Box<dyn Error>> {
         if !IDENTIFIER_REGEX.is_match(&self.identifier) {
             return Err(Box::new(ApiError {
@@ -1692,10 +1698,10 @@ impl ValidateRequest for AuthenticationRequest {
     }
 }
 
-/// Response to the authentication request when using session_version 3.
+/// Response to the authentication request (POST) when using session_version 3.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct AuthenticationResponseV3 {
+pub struct AuthenticationPostResponseV3 {
     pub account_id: String,
     pub client_id: String,
     pub lightstreamer_endpoint: String,
@@ -1704,18 +1710,18 @@ pub struct AuthenticationResponseV3 {
 }
 
 /// Validate the authentication response.
-impl ValidateResponse for AuthenticationResponseV3 {}
+impl ValidateResponse for AuthenticationPostResponseV3 {}
 
 /// User's session details request with optionally tokens by
-/// making a GET request to the /session endpoint.
+/// sending a GET request to the /session endpoint.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SessionDetailsRequest {
+pub struct SessionDetailsGetRequest {
     /// Indicates whether to fetch session token headers.
     pub fetch_session_tokens: bool,
 }
 
-impl ValidateRequest for SessionDetailsRequest {}
+impl ValidateRequest for SessionDetailsGetRequest {}
 
 /// OAuth access token, which is part of the response to the authentication request
 /// when using session_version 3.
@@ -1733,10 +1739,10 @@ pub struct OauthToken {
     pub token_type: String,
 }
 
-/// User's session details response.
+/// User's session details response. Response to the GET /session request.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SessionDetailsResponse {
+pub struct SessionDetailsGetResponse {
     /// Active account identifier.
     pub account_id: String,
     /// Client identifier.
@@ -1752,12 +1758,13 @@ pub struct SessionDetailsResponse {
 }
 
 /// Validate the session details response.
-impl ValidateResponse for SessionDetailsResponse {}
+impl ValidateResponse for SessionDetailsGetResponse {}
 
 /// The encryption key to use in order to send the user password in an encrypted form.
+/// Response to the GET /session/encryption-key request.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SessionEncryptionKeyResponse {
+pub struct SessionEncryptionKeyGetResponse {
     /// Encryption key in Base 64 format.
     pub encryption_key: String,
     /// Current timestamp in milliseconds since epoch.
@@ -1765,18 +1772,18 @@ pub struct SessionEncryptionKeyResponse {
 }
 
 /// Validate the session encryption key response.
-impl ValidateResponse for SessionEncryptionKeyResponse {}
+impl ValidateResponse for SessionEncryptionKeyGetResponse {}
 
-/// Request a new session token by making a POST request
+/// Request a new session token by sending a POST request
 /// to the /session/refresh-token endpoint.
 #[derive(Debug, Serialize)]
-pub struct SessionRefreshTokenRequest {
+pub struct SessionRefreshTokenPostRequest {
     /// Refresh token
     pub refresh_token: String,
 }
 
 /// Validate the session refresh token request.
-impl ValidateRequest for SessionRefreshTokenRequest {
+impl ValidateRequest for SessionRefreshTokenPostRequest {
 	fn validate(&self) -> Result<(), Box<dyn Error>> {
 		if self.refresh_token.is_empty() {
 			return Err(Box::new(ApiError {
@@ -1788,9 +1795,9 @@ impl ValidateRequest for SessionRefreshTokenRequest {
 	}
 }
 
-/// Access token response.
+/// Access token response. Response to the POST /session/refresh-token request.
 #[derive(Debug, Deserialize, Serialize)]
-pub struct SessionRefreshTokenResponse {
+pub struct SessionRefreshTokenPostResponse {
 	/// Access token.
     pub access_token: String,
     /// Access token expiry in seconds.
@@ -1804,4 +1811,4 @@ pub struct SessionRefreshTokenResponse {
 }
 
 /// Validate the session encryption key response.
-impl ValidateResponse for SessionRefreshTokenResponse {}
+impl ValidateResponse for SessionRefreshTokenPostResponse {}

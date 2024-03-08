@@ -1,6 +1,7 @@
 use crate::common::*;
 use crate::rest_models::{
-    AuthenticationRequest, AuthenticationResponseV3, ValidateRequest, ValidateResponse,
+    AuthenticationPostRequest, AuthenticationPostResponseV3,
+    ValidateRequest, ValidateResponse,
 };
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::StatusCode;
@@ -169,7 +170,7 @@ impl RestClient {
     /// Log in to the REST API using session version 2.
     pub async fn login_v2(&mut self) -> Result<Value, Box<dyn Error>> {
         // Create the login request body.
-        let login_request_body = AuthenticationRequest {
+        let login_request_body = AuthenticationPostRequest {
             identifier: self.config.username.clone(),
             password: self.config.password.clone(),
         };
@@ -231,7 +232,7 @@ impl RestClient {
     /// Log in to the REST API using session version 2.
     pub async fn login_v3(&mut self) -> Result<Value, Box<dyn Error>> {
         // Create the login request body.
-        let login_request_body = AuthenticationRequest {
+        let login_request_body = AuthenticationPostRequest {
             identifier: self.config.username.clone(),
             password: self.config.password.clone(),
         };
@@ -255,7 +256,7 @@ impl RestClient {
             StatusCode::OK => {
                 // Deserialize the response body to a LoginResponseV3.
                 let response_body = response.json().await?;
-                let login_response = AuthenticationResponseV3::from_value(&response_body)?;
+                let login_response = AuthenticationPostResponseV3::from_value(&response_body)?;
 
                 // Get access_token from the login response and set it as the Bearer token in Authorization header.
                 let mut auth_headers = HeaderMap::new();

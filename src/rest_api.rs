@@ -33,7 +33,7 @@ impl RestApi {
     /// Returns a list of the logged-in client's accounts.
     pub async fn accounts_get(
         &self,
-    ) -> Result<(Value, AccountsResponse), Box<dyn Error>> {
+    ) -> Result<(Value, AccountsGetResponse), Box<dyn Error>> {
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
@@ -43,7 +43,7 @@ impl RestApi {
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
         // Convert the serde_json::Value response to Session model.
-        let accounts = AccountsResponse::from_value(&response_value)?;
+        let accounts = AccountsGetResponse::from_value(&response_value)?;
 
         Ok((headers, accounts))
     }
@@ -51,7 +51,7 @@ impl RestApi {
     /// Returns account preferences.
     pub async fn accounts_preferences_get(
         &self,
-    ) -> Result<(Value, AccountsPreferencesResponse), Box<dyn Error>> {
+    ) -> Result<(Value, AccountsPreferencesGetResponse), Box<dyn Error>> {
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
@@ -61,7 +61,7 @@ impl RestApi {
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
         // Convert the serde_json::Value response to Session model.
-        let accounts_preferences = AccountsPreferencesResponse::from_value(&response_value)?;
+        let accounts_preferences = AccountsPreferencesGetResponse::from_value(&response_value)?;
 
         Ok((headers, accounts_preferences))
     }
@@ -69,8 +69,8 @@ impl RestApi {
     /// Updates account preferences.
     pub async fn accounts_preferences_put(
         &self,
-        body: &AccountsPreferencesRequest,
-    ) -> Result<(Value, AccountsPreferencesStatusResponse), Box<dyn Error>> {
+        body: &AccountsPreferencesPutRequest,
+    ) -> Result<(Value, AccountsPreferencesStatusPutResponse), Box<dyn Error>> {
         // Validate the body.
         body.validate()?;
 
@@ -83,7 +83,7 @@ impl RestApi {
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
         // Convert the serde_json::Value response to Session model.
-        let status = AccountsPreferencesStatusResponse::from_value(&response_value)?;
+        let status = AccountsPreferencesStatusPutResponse::from_value(&response_value)?;
 
         Ok((headers, status))
     }
@@ -98,8 +98,8 @@ impl RestApi {
     /// should only be used if the deal confirmation isn't received via the streaming API.
     pub async fn confirms_get(
         &self,
-        params: ConfirmsRequest,
-    ) -> Result<(Value, ConfirmsResponse), Box<dyn Error>> {
+        params: ConfirmsGetRequest,
+    ) -> Result<(Value, ConfirmsGetResponse), Box<dyn Error>> {
 
         let url = format!("confirms/{}", params.deal_reference);
 
@@ -112,7 +112,7 @@ impl RestApi {
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
         // Convert the serde_json::Value response to Session model.
-        let confirmations = ConfirmsResponse::from_value(&response_value)?;
+        let confirmations = ConfirmsGetResponse::from_value(&response_value)?;
 
         Ok((headers, confirmations))
     }
@@ -126,8 +126,8 @@ impl RestApi {
     /// Returns the account activity history.
     pub async fn history_activity_get(
         &self,
-        params: ActivityHistoryRequest,
-    ) -> Result<(Value, ActivityHistoryResponse), Box<dyn Error>> {
+        params: ActivityHistoryGetRequest,
+    ) -> Result<(Value, ActivityHistoryGetResponse), Box<dyn Error>> {
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
@@ -137,7 +137,7 @@ impl RestApi {
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
         // Convert the serde_json::Value response to Session model.
-        let history_activity = ActivityHistoryResponse::from_value(&response_value)?;
+        let history_activity = ActivityHistoryGetResponse::from_value(&response_value)?;
 
         Ok((headers, history_activity))
     }
@@ -145,8 +145,8 @@ impl RestApi {
     /// Returns the transaction history. Returns the minute prices within the last 10 minutes by default.
     pub async fn history_transactions_get(
         &self,
-        params: TransactionHistoryRequest,
-    ) -> Result<(Value, TransactionHistoryResponse), Box<dyn Error>> {
+        params: TransactionHistoryGetRequest,
+    ) -> Result<(Value, TransactionHistoryGetResponse), Box<dyn Error>> {
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
@@ -156,7 +156,7 @@ impl RestApi {
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
         // Convert the serde_json::Value response to Session model.
-        let history_activity = TransactionHistoryResponse::from_value(&response_value)?;
+        let history_activity = TransactionHistoryGetResponse::from_value(&response_value)?;
 
         Ok((headers, history_activity))
     }
@@ -170,7 +170,7 @@ impl RestApi {
     /// Returns all open positions for the active account.
     pub async fn positions_get(
         &self,
-    ) -> Result<(Value, PositionsResponse), Box<dyn Error>> {
+    ) -> Result<(Value, PositionsGetResponse), Box<dyn Error>> {
 
         // Send the request to the REST client.
         let (header_map, response_value) = self
@@ -181,7 +181,7 @@ impl RestApi {
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
         // Convert the serde_json::Value response to Session model.
-        let positions = PositionsResponse::from_value(&response_value)?;
+        let positions = PositionsGetResponse::from_value(&response_value)?;
 
         Ok((headers, positions))
     }
@@ -189,8 +189,8 @@ impl RestApi {
     /// Returns a specific open position for the active account.
     pub async fn position_get(
         &self,
-        params: PositionRequest,
-    ) -> Result<(Value, PositionResponse), Box<dyn Error>> {
+        params: PositionGetRequest,
+    ) -> Result<(Value, PositionGetResponse), Box<dyn Error>> {
 
         // Create the url based on the params.
         let url = format!("positions/{}", params.deal_id);
@@ -204,7 +204,7 @@ impl RestApi {
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
         // Convert the serde_json::Value response to Session model.
-        let positions = PositionResponse::from_value(&response_value)?;
+        let positions = PositionGetResponse::from_value(&response_value)?;
 
         Ok((headers, positions))
     }
@@ -229,8 +229,8 @@ impl RestApi {
     /// Get session details for the current session.
     pub async fn session_get(
         &self,
-        params: Option<SessionDetailsRequest>,
-    ) -> Result<(Value, SessionDetailsResponse), Box<dyn Error>> {
+        params: Option<SessionDetailsGetRequest>,
+    ) -> Result<(Value, SessionDetailsGetResponse), Box<dyn Error>> {
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
@@ -240,7 +240,7 @@ impl RestApi {
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
         // Convert the serde_json::Value response to Session model.
-        let session = SessionDetailsResponse::from_value(&response_value)?;
+        let session = SessionDetailsGetResponse::from_value(&response_value)?;
 
         Ok((headers, session))
     }
@@ -253,8 +253,8 @@ impl RestApi {
     /// Switch to a different account by updating the current session.
     pub async fn session_put(
         &self,
-        body: &AccountSwitchRequest,
-    ) -> Result<(Value, AccountSwitchResponse), Box<dyn Error>> {
+        body: &AccountSwitchPutRequest,
+    ) -> Result<(Value, AccountSwitchPutResponse), Box<dyn Error>> {
         // Validate the body.
         body.validate()?;
 
@@ -267,7 +267,7 @@ impl RestApi {
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
         // Deserialize the response_value to AccountSwitchResponse.
-        let account_switch_response = AccountSwitchResponse::from_value(&response_value)?;
+        let account_switch_response = AccountSwitchPutResponse::from_value(&response_value)?;
 
         Ok((headers, account_switch_response))
     }
@@ -276,7 +276,7 @@ impl RestApi {
     /// Please note, region-specific login restrictions may apply.
     pub async fn session_encryption_key_get(
         &self,
-    ) -> Result<(Value, SessionEncryptionKeyResponse), Box<dyn Error>> {
+    ) -> Result<(Value, SessionEncryptionKeyGetResponse), Box<dyn Error>> {
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
@@ -286,15 +286,15 @@ impl RestApi {
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
         // Deserialize the response_value to EncryptionKeyResponse.
-        let encryption_key_response = SessionEncryptionKeyResponse::from_value(&response_value)?;
+        let encryption_key_response = SessionEncryptionKeyGetResponse::from_value(&response_value)?;
 
         Ok((headers, encryption_key_response))
     }
 
     pub async fn session_refresh_token_post(
         &self,
-        body: &SessionRefreshTokenRequest,
-    ) -> Result<(Value, SessionRefreshTokenResponse), Box<dyn Error>> {
+        body: &SessionRefreshTokenPostRequest,
+    ) -> Result<(Value, SessionRefreshTokenPostResponse), Box<dyn Error>> {
         // Validate the body.
         body.validate()?;
 
@@ -307,7 +307,7 @@ impl RestApi {
         // Convert header_map to json.
         let headers: Value = headers_to_json(&headers)?;
         // Deserialize the response_value to SessionRefreshTokenResponse.
-        let session_refresh_token_response = SessionRefreshTokenResponse::from_value(&response_value)?;
+        let session_refresh_token_response = SessionRefreshTokenPostResponse::from_value(&response_value)?;
 
         Ok((headers, session_refresh_token_response))
     }

@@ -225,18 +225,18 @@ async fn accounts_preferences_put_works() {
     let body_2;
     match response_1.1.trailing_stops_enabled {
         true => {
-            body_1 = AccountsPreferencesRequest {
+            body_1 = AccountsPreferencesPutRequest {
                 trailing_stops_enabled: false,
             };
-            body_2 = AccountsPreferencesRequest {
+            body_2 = AccountsPreferencesPutRequest {
                 trailing_stops_enabled: true,
             };
         },
         false => {
-            body_1 = AccountsPreferencesRequest {
+            body_1 = AccountsPreferencesPutRequest {
                 trailing_stops_enabled: true,
             };
-            body_2 = AccountsPreferencesRequest {
+            body_2 = AccountsPreferencesPutRequest {
                 trailing_stops_enabled: false,
             };
         },
@@ -343,7 +343,7 @@ async fn confirms_get_works() {
     let api = get_or_init_rest_api().await;
 
     // TODO: Replace the deal_reference with a valid deal reference.
-    let params = ConfirmsRequest {
+    let params = ConfirmsGetRequest {
         deal_reference: "76GAP71HRC2SAQ4B".to_string(),
     };
 
@@ -378,9 +378,9 @@ async fn history_activity_get_works() {
     // Initialize the API instance.
     let api = get_or_init_rest_api().await;
 
-    let params = ActivityHistoryRequest {
+    let params = ActivityHistoryGetRequest {
         // 10 years ago.
-        from: chrono::Utc::now().naive_utc() - chrono::Duration::days(3650),
+        from: chrono::Utc::now().naive_utc() - chrono::Duration::try_days(3650).unwrap(),
         to: None,
         detailed: None,
         deal_id: None,
@@ -413,10 +413,10 @@ async fn history_transactions_get_works() {
     // Initialize the API instance.
     let api = get_or_init_rest_api().await;
 
-    let params = TransactionHistoryRequest {
+    let params = TransactionHistoryGetRequest {
         r#type: None,
         // 10 years ago.
-        from: chrono::Utc::now().naive_utc() - chrono::Duration::days(3650),
+        from: chrono::Utc::now().naive_utc() - chrono::Duration::try_days(3650).unwrap(),
         to: None,
         max_span_seconds: None,
         page_size: Some(10),
@@ -499,7 +499,7 @@ async fn position_get_works() {
 
     let deal_id = position.position.deal_id.clone();
 
-    let params = PositionRequest { deal_id: deal_id.clone() };
+    let params = PositionGetRequest { deal_id: deal_id.clone() };
 
     let response_2 = match api.position_get(params).await {
         Ok(response) => response,
@@ -553,7 +553,7 @@ async fn session_get_works() {
     );
 
     // Test with params.
-    let params = SessionDetailsRequest {
+    let params = SessionDetailsGetRequest {
         fetch_session_tokens: true,
     };
 
@@ -596,7 +596,7 @@ async fn session_put_works() {
         }
     };
 
-    let body = AccountSwitchRequest {
+    let body = AccountSwitchPutRequest {
         account_id: new_account_number.clone(),
         default_account: None,
     };
@@ -664,14 +664,14 @@ async fn session_refresh_token_post_works() {
         return;
     }
 
-    let body = SessionRefreshTokenRequest {
+    let body = SessionRefreshTokenPostRequest {
         refresh_token: api.client.refresh_token.as_ref().unwrap().clone(),
     };
 
     println!("Refresh token: {:?}", body.refresh_token);
     println!("Auth headers: {:?}", api.client.auth_headers.as_ref().unwrap());
 
-    let response: (Value, SessionRefreshTokenResponse) = match api.session_refresh_token_post(&body).await {
+    let response: (Value, SessionRefreshTokenPostResponse) = match api.session_refresh_token_post(&body).await {
         Ok(response) => response,
         Err(e) => {
             println!("Error refreshing session token: {:?}", e);
