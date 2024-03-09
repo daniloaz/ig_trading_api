@@ -1,12 +1,11 @@
 use crate::common::*;
 use crate::rest_models::{
-    AuthenticationPostRequest, AuthenticationPostResponseV3,
-    ValidateRequest, ValidateResponse,
+    AuthenticationPostRequest, AuthenticationPostResponseV3, ValidateRequest, ValidateResponse,
 };
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::StatusCode;
 use serde::Serialize;
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::error::Error;
 
 /// Default session version if not explicitly set.
@@ -38,23 +37,37 @@ pub struct RestClient {
 /// Implementation for the RestClient struct.
 impl RestClient {
     /// Send a DELETE request to the API.
-    pub async fn delete(&self, method: String) -> Result<(HeaderMap, ()), Box<dyn Error>> {
+    pub async fn delete(
+        &self,
+        method: String,
+        api_version: Option<usize>,
+        body: &Option<impl Serialize + ValidateRequest>,
+    ) -> Result<(HeaderMap, Value), Box<dyn Error>> {
         // Default API version is 1.
-        let api_version: usize = 1;
+        let version = api_version.unwrap_or(1).to_string();
+        // Validate the body.
+        if let Some(body) = body {
+            body.validate()?;
+        }
+        // Convert the body to a serde_json::Value.
+        let body = serde_json::to_value(body)?;
 
         let response = self
             .client
             .delete(&format!("{}/{}", &self.base_url, method))
+            .json(&body)
             .headers(self.auth_headers.clone().unwrap_or(HeaderMap::new()))
             .headers(self.common_headers.clone())
-            .header("Version", api_version)
+            .header("Version", version)
             .send()
             .await?;
 
         // Check the response status code.
         match response.status() {
-            // If the status code is 204 No Content, return success.
-            StatusCode::NO_CONTENT => Ok((response.headers().clone(), ())),
+            // If the status code is 204 No Content or 200 OK, return success.
+            StatusCode::NO_CONTENT => Ok((response.headers().clone(), json!({}))),
+            // If the status code is 200 OK, return success and response body.
+            StatusCode::ACCEPTED => Ok((response.headers().clone(), response.json().await?)),
             // If the status code is not 204 No Content, return an error.
             _ => Err(Box::new(ApiError {
                 message: format!(
@@ -221,10 +234,11 @@ impl RestClient {
             }
             // If the status code is not 200 OK, return an error.
             _ => Err(Box::new(ApiError {
-                message: format!("Login failed with status code: {:?} - {:?}",
+                message: format!(
+                    "Login failed with status code: {:?} - {:?}",
                     response.status(),
                     response.text().await?
-                )
+                ),
             })),
         }
     }
@@ -283,7 +297,8 @@ impl RestClient {
             }
             // If the status code is not 200 OK, return an error.
             _ => Err(Box::new(ApiError {
-                message: format!("Login failed with status code: {:?} - {:?}",
+                message: format!(
+                    "Login failed with status code: {:?} - {:?}",
                     response.status(),
                     response.text().await?,
                 ),
@@ -295,11 +310,11 @@ impl RestClient {
     pub async fn post(
         &self,
         method: String,
-        version: Option<usize>,
+        api_version: Option<usize>,
         body: &(impl Serialize + ValidateRequest),
     ) -> Result<(HeaderMap, Value), Box<dyn Error>> {
         // Default API version is 1.
-        let version = version.unwrap_or(1).to_string();
+        let version = api_version.unwrap_or(1).to_string();
         // Validate the body.
         body.validate()?;
         // Convert the body to a serde_json::Value.

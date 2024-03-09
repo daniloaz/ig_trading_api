@@ -62,6 +62,7 @@ pub trait ValidateResponse: DeserializeOwned {
 pub struct Empty {}
 
 impl ValidateRequest for Empty {}
+impl ValidateRequest for &Empty {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -103,31 +104,6 @@ pub struct Sentiment {
     pub long_position_percentage: f64,
     pub market_id: String,
     pub short_position_percentage: f64,
-}
-
-
-
-
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum OrderType {
-    Limit,
-    Market,
-    Quote,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum TimeInForce {
-    ExecuteAndEliminate,
-    FillOrKill,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DealRef {
-    pub deal_reference: String,
 }
 
 #[derive(Debug, Default, Serialize)]
@@ -1429,78 +1405,11 @@ pub enum TransactionType {
     Withdrawal,
 }
 
-#[derive(Debug, Default, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ClosePosition {
-    pub deal_id: Option<String>,
-    pub direction: Option<Direction>,
-    pub epic: Option<String>,
-    pub expiry: Option<String>,
-    pub level: Option<f64>,
-    pub order_type: Option<OrderType>,
-    pub quote_id: Option<String>,
-    pub size: Option<f64>,
-    pub time_in_force: Option<TimeInForce>,
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // POSITIONS ENDPOINT MODELS.
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum PositionStatus {
-    Amended,
-    Closed,
-    Deleted,
-    Open,
-    PartiallyClosed,
-}
-
-/// Request an open position for the active account by deal identifier by sending
-/// a GET request to the /positions/{dealId} endpoint.
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PositionGetRequest {
-    /// Deal identifier.
-    pub deal_id: String,
-}
-
-impl ValidateRequest for PositionGetRequest {
-    fn validate(&self) -> Result<(), Box<dyn Error>> {
-        if !DEAL_ID_REGEX.is_match(&self.deal_id) {
-            return Err(Box::new(ApiError {
-                message: "Deal ID field is invalid.".to_string(),
-            }));
-        }
-
-        Ok(())
-    }
-}
-
-/// List of all the positions for the active account. Response to the GET /positions request.
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PositionsGetResponse {
-    /// List of positions.
-    pub positions: Vec<PositionGetResponse>,
-}
-
-impl ValidateResponse for PositionsGetResponse {}
-
-/// Open position data. Response to the GET /positions/{dealId} request.
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PositionGetResponse {
-    /// Market data.
-    pub market: MarketData,
-    /// Position data.
-    pub position: PositionData,
-}
-
-impl ValidateResponse for PositionGetResponse {}
 
 /// Market data.
 #[derive(Debug, Deserialize, Serialize)]
@@ -1545,6 +1454,26 @@ pub struct MarketData {
     pub update_time_utc: String,
 }
 
+/// Describes the current status of a given market.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum MarketStatus {
+    // Closed.
+    Closed,
+    /// Open for edits.
+    EditsOnly,
+    /// Offline.
+    Offline,
+    /// In auction mode.
+    OnAuction,
+    /// In no-edits mode.
+    OnAuctionNoEdits,
+    /// Suspended.
+    Suspended,
+    /// Open for trades.
+    Tradeable,
+}
+
 /// Instrument type.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -1574,25 +1503,190 @@ pub enum InstrumentType {
     Unknown,
 }
 
-/// Describes the current status of a given market.
+/// Describes the order level model to be used for a position operation.
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum OrderType {
+    /// Limit orders get executed at the price seen by IG at the moment of booking a trade.
+    /// A limit determines the level at which the order or the remainder of the order will be rejected.
+    Limit,
+    /// Market orders get executed at the price seen by the IG at the time of booking the trade.
+    /// A level cannot be specified. Not applicable to BINARY instruments.
+    Market,
+    /// Quote orders get executed at the specified level. The level has to be accompanied by a valid
+    /// quote id. This type is only available subject to agreement with IG.
+    Quote,
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum MarketStatus {
-    // Closed.
+pub enum PositionStatus {
+    Amended,
     Closed,
-    /// Open for edits.
-    EditsOnly,
-    /// Offline.
-    Offline,
-    /// In auction mode.
-    OnAuction,
-    /// In no-edits mode.
-    OnAuctionNoEdits,
-    /// Suspended.
-    Suspended,
-    /// Open for trades.
-    Tradeable,
+    Deleted,
+    Open,
+    PartiallyClosed,
 }
+
+/// Request to close a position by sending a DELETE request to the /positions/otc endpoint.
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PositionDeleteRequest {
+    /// Deal identifier.
+    pub deal_id: Option<String>,
+    /// Deal direction.
+    pub direction: Option<Direction>,
+    /// Instrument epic identifier.
+    pub epic: Option<String>,
+    /// Instrument expiry.
+    pub expiry: Option<String>,
+    /// Closing deal level.
+    pub level: Option<f64>,
+    /// Describes the order level model to be used for a position operation.
+    pub order_type: Option<OrderType>,
+    /// Lightstreamer price quote identifier.
+    pub quote_id: Option<String>,
+    /// Deal size.
+    pub size: f64,
+    /// The time in force determines the order fill strategy.
+    pub time_in_force: Option<TimeInForce>,
+}
+
+impl ValidateRequest for PositionDeleteRequest {
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        // Constraint: Pattern(regexp=".{1,30}")
+        if let Some(deal_id) = &self.deal_id {
+            if !DEAL_ID_REGEX.is_match(deal_id) {
+                return Err(Box::new(ApiError {
+                    message: "Deal ID field is invalid.".to_string(),
+                }));
+            }
+        }
+
+        // Constraint: Pattern(regexp="[A-Za-z0-9._]{6,30}")
+        if let Some(epic) = &self.epic {
+            if !EPIC_REGEX.is_match(epic) {
+                return Err(Box::new(ApiError {
+                    message: "Epic field is invalid.".to_string(),
+                }));
+            }
+        }
+
+        // Constraint: Pattern(regexp="(\\d{2}-)?[A-Z]{3}-\\d{2}|-|DFB")
+        if let Some(expiry) = &self.expiry {
+            if !EXPIRY_REGEX.is_match(expiry) {
+                return Err(Box::new(ApiError {
+                    message: "Expiry field is invalid.".to_string(),
+                }));
+            }
+        }
+
+        // Constraint: check precision of size is not more than 12 decimal places.
+        let size_str = format!("{}", self.size);
+        let parts: Vec<&str> = size_str.split('.').collect();
+        if parts.len() == 2 && parts[1].len() > 12 {
+            return Err(Box::new(ApiError {
+                message: "Size field has more thatn 12 decimal places.".to_string(),
+            }));
+        }
+
+        // Constraint: if epic is defined, then set expiry.
+        if self.epic.is_some() && self.expiry.is_none() {
+            return Err(Box::new(ApiError {
+                message: "Expiry field is required when epic is defined.".to_string(),
+            }));
+        }
+
+        // Constraint: if order_type equals LIMIT, then DO NOT set quote_id.
+        if self.order_type == Some(OrderType::Limit) && self.quote_id.is_some() {
+            return Err(Box::new(ApiError {
+                message: "Quote ID field cannot be set when order type is LIMIT.".to_string(),
+            }));
+        }
+
+        // Constraint: if order_type equals LIMIT, then set level.
+        if self.order_type == Some(OrderType::Limit) && self.level.is_none() {
+            return Err(Box::new(ApiError {
+                message: "Level field is required when order type is LIMIT.".to_string(),
+            }));
+        }
+
+        // Constraint: if order_type equals MARKET, then DO NOT set level, quote_id.
+        if self.order_type == Some(OrderType::Market) && (self.level.is_some() || self.quote_id.is_some()) {
+            return Err(Box::new(ApiError {
+                message: "Level and quote ID fields cannot be set when order type is MARKET.".to_string(),
+            }));
+        }
+
+        // Constraint: if order_type equals QUOTE, then set level, quoteId.
+        if self.order_type == Some(OrderType::Quote) && (self.level.is_none() || self.quote_id.is_none()) {
+            return Err(Box::new(ApiError {
+                message: "Level and quote ID fields are required when order type is QUOTE.".to_string(),
+            }));
+        }
+
+        // Constraint: set only one of {deal_id, epic}.
+        if self.deal_id.is_some() && self.epic.is_some() {
+            return Err(Box::new(ApiError {
+                message: "Set only one of {deal_id, epic}.".to_string(),
+            }));
+        }
+
+        Ok(())
+    }
+}
+
+/// Response to position close request (DELETE /positions/otc).
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PositionDeleteResponse {
+    pub deal_reference: String,
+}
+
+impl ValidateResponse for PositionDeleteResponse {}
+
+/// Request an open position for the active account by deal identifier by sending
+/// a GET request to the /positions/{dealId} endpoint.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PositionGetRequest {
+    /// Deal identifier.
+    pub deal_id: String,
+}
+
+impl ValidateRequest for PositionGetRequest {
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        if !DEAL_ID_REGEX.is_match(&self.deal_id) {
+            return Err(Box::new(ApiError {
+                message: "Deal ID field is invalid.".to_string(),
+            }));
+        }
+
+        Ok(())
+    }
+}
+
+/// List of all the positions for the active account. Response to the GET /positions request.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PositionsGetResponse {
+    /// List of positions.
+    pub positions: Vec<PositionGetResponse>,
+}
+
+impl ValidateResponse for PositionsGetResponse {}
+
+/// Open position data. Response to the GET /positions/{dealId} request.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PositionGetResponse {
+    /// Market data.
+    pub market: MarketData,
+    /// Position data.
+    pub position: PositionData,
+}
+
+impl ValidateResponse for PositionGetResponse {}
 
 /// Position data.
 #[derive(Debug, Deserialize, Serialize)]
@@ -1629,6 +1723,16 @@ pub struct PositionData {
     pub trailing_step: Option<f64>,
     /// Trailing stop distance.
     pub trailing_stop_distance: Option<f64>,
+}
+
+/// The time in force determines the order fill strategy.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum TimeInForce {
+    /// Execute and eliminate.
+    ExecuteAndEliminate,
+    /// Fill or kill.
+    FillOrKill,
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////

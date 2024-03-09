@@ -167,23 +167,24 @@ impl RestApi {
     //
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    /// Returns all open positions for the active account.
-    pub async fn positions_get(
+    /// Returns a specific open position for the active account.
+    pub async fn position_delete(
         &self,
-    ) -> Result<(Value, PositionsGetResponse), Box<dyn Error>> {
+        body: PositionDeleteRequest,
+    ) -> Result<(Value, PositionDeleteResponse), Box<dyn Error>> {
 
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
-            .get("positions".to_string(), Some(2), &None::<Empty>)
+            .delete("positions/otc".to_string(), Some(1), &Some(body))
             .await?;
 
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
         // Convert the serde_json::Value response to Session model.
-        let positions = PositionsGetResponse::from_value(&response_value)?;
+        let position_delete_response = PositionDeleteResponse::from_value(&response_value)?;
 
-        Ok((headers, positions))
+        Ok((headers, position_delete_response))
     }
 
     /// Returns a specific open position for the active account.
@@ -209,6 +210,25 @@ impl RestApi {
         Ok((headers, positions))
     }
 
+    /// Returns all open positions for the active account.
+    pub async fn positions_get(
+        &self,
+    ) -> Result<(Value, PositionsGetResponse), Box<dyn Error>> {
+
+        // Send the request to the REST client.
+        let (header_map, response_value) = self
+            .client
+            .get("positions".to_string(), Some(2), &None::<Empty>)
+            .await?;
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+        // Convert the serde_json::Value response to Session model.
+        let positions = PositionsGetResponse::from_value(&response_value)?;
+
+        Ok((headers, positions))
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     //
     // SESSION METHODS.
@@ -218,7 +238,7 @@ impl RestApi {
     /// Log out of the IG API by deleting the current session.
     pub async fn session_delete(&self) -> Result<(Value, ()), Box<dyn Error>> {
         // Send the request to the REST client.
-        let (header_map, _) = self.client.delete("session".to_string()).await?;
+        let (header_map, _) = self.client.delete("session".to_string(), Some(1), &None::<Empty>).await?;
 
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
