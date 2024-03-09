@@ -352,8 +352,8 @@ impl RestClient {
     pub async fn put(
         &self,
         method: String,
-        body: &(impl Serialize + ValidateRequest),
         version: Option<usize>,
+        body: &(impl Serialize + ValidateRequest),
     ) -> Result<(HeaderMap, Value), Box<dyn Error>> {
         // Default API version is 1.
         let version = version.unwrap_or(1).to_string();

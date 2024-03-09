@@ -77,7 +77,7 @@ impl RestApi {
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
-            .put("accounts/preferences".to_string(), body, Some(1))
+            .put("accounts/preferences".to_string(), Some(1), body)
             .await?;
 
         // Convert header_map to json.
@@ -281,7 +281,7 @@ impl RestApi {
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
-            .put("session".to_string(), body, Some(1))
+            .put("session".to_string(), Some(1), body)
             .await?;
 
         // Convert header_map to json.
