@@ -108,29 +108,6 @@ pub struct Sentiment {
 
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CreatePosition {
-    pub currency_code: Option<String>,
-    pub deal_reference: Option<String>,
-    pub direction: Option<Direction>,
-    pub epic: Option<String>,
-    pub expiry: Option<String>,
-    pub force_open: Option<bool>,
-    pub guaranteed_stop: Option<bool>,
-    pub level: Option<f64>,
-    pub limit_distance: Option<f64>,
-    pub limit_level: Option<f64>,
-    pub order_type: Option<OrderType>,
-    pub quote_id: Option<String>,
-    pub size: Option<f64>,
-    pub stop_distance: Option<f64>,
-    pub stop_level: Option<f64>,
-    pub time_in_force: Option<TimeInForce>,
-    pub trailing_stop: Option<bool>,
-    pub trailing_stop_increment: Option<f64>,
-}
-
-#[derive(Debug, Default, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct UpdatePosition {
     pub guaranteed_stop: Option<bool>,
     pub limit_level: Option<f64>,
@@ -1687,6 +1664,208 @@ pub struct PositionGetResponse {
 }
 
 impl ValidateResponse for PositionGetResponse {}
+
+/// Request to open a new position by sending a POST request to the /positions/otc endpoint.
+#[derive(Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PositionPostRequest {
+    /// Currency code.
+    pub currency_code: String,
+    /// Deal reference. A user-defined reference identifying the submission of the order.
+    pub deal_reference: Option<String>,
+    /// Deal direction.
+    pub direction: Option<Direction>,
+    /// Instrument epic identifier.
+    pub epic: String,
+    /// Instrument expiry.
+    pub expiry: String,
+    /// True if force open is required.
+    pub force_open: bool,
+    /// True if a guaranteed stop is required.
+    pub guaranteed_stop: bool,
+    /// Deal level.
+    pub level: Option<f64>,
+    /// Limit distance.
+    pub limit_distance: Option<f64>,
+    /// Limit level.
+    pub limit_level: Option<f64>,
+    /// Describes the order level model to be used for a position operation.
+    pub order_type: Option<OrderType>,
+    /// Lightstreamer price quote identifier.
+    pub quote_id: Option<String>,
+    /// Deal size.
+    pub size: f64,
+    /// Stop distance.
+    pub stop_distance: Option<f64>,
+    /// Stop level.
+    pub stop_level: Option<f64>,
+    /// The time in force determines the order fill strategy.
+    pub time_in_force: Option<TimeInForce>,
+    /// Whether the stop has to be moved towards the current level in case of a favourable trade.
+    pub trailing_stop: Option<bool>,
+    /// Increment step in pips for the trailing stop.
+    pub trailing_stop_increment: Option<f64>,
+}
+
+impl ValidateRequest for PositionPostRequest {
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        // Constraint: if limit_distance is set, then force_open must be true.
+        if self.limit_distance.is_some() && self.force_open != true {
+            return Err(Box::new(ApiError {
+                message: "force_open field must be true when limit_distance is set.".to_string(),
+            }));
+        }
+
+        // Constraint: if limit_level is set, then force_open must be true.
+        if self.limit_level.is_some() && self.force_open != true {
+            return Err(Box::new(ApiError {
+                message: "force_open field must be true when limit_level is set.".to_string(),
+            }));
+        }
+
+        // Constraint: if stop_distance is set, then force_open must be true.
+        if self.stop_distance.is_some() && self.force_open != true {
+            return Err(Box::new(ApiError {
+                message: "force_open field must be true when stop_distance is set.".to_string(),
+            }));
+        }
+
+        // Constraint: if stop_level is set, then force_open must be true.
+        if self.stop_level.is_some() && self.force_open != true {
+            return Err(Box::new(ApiError {
+                message: "force_open field must be true when stop_level is set.".to_string(),
+            }));
+        }
+
+        // Constraint: if guaranteed_stop equals true, then set only one of stop_level, stop_distance.
+        if self.guaranteed_stop == true && self.stop_level.is_some() && self.stop_distance.is_some() {
+            return Err(Box::new(ApiError {
+                message: "Only one of stop_level or stop_distance can be set when guaranteed_stop is true.".to_string(),
+            }));
+        }
+
+        // Constraint: if order_type equals LIMIT, then DO NOT set quote_id.
+        if self.order_type == Some(OrderType::Limit) && self.quote_id.is_some() {
+            return Err(Box::new(ApiError {
+                message: "quote_id cannot be set when order_type is LIMIT.".to_string(),
+            }));
+        }
+
+        // Constraint: if order_type equals LIMIT, then set level.
+        if self.order_type == Some(OrderType::Limit) && self.level.is_none() {
+            return Err(Box::new(ApiError {
+                message: "level must be set when order_type is LIMIT.".to_string(),
+            }));
+        }
+
+        // Constraint: if order_type equals MARKET, then DO NOT set level, quote_id.
+        if self.order_type == Some(OrderType::Market) && (self.level.is_some() || self.quote_id.is_some()) {
+            return Err(Box::new(ApiError {
+                message: "Neither level nor quote_id can be set when order_type is MARKET.".to_string(),
+            }));
+        }
+
+        // Constraint: if order_type equals QUOTE, then set level, quote_id.
+        if self.order_type == Some(OrderType::Market) && (self.level.is_none() || self.quote_id.is_none()) {
+            return Err(Box::new(ApiError {
+                message: "Both level and quote_id must be set when order_type is QUOTE.".to_string(),
+            }));
+        }
+
+        // Constraint: if trailing_stop equals false, then DO NOT set trailing_stop_increment.
+        if self.trailing_stop == Some(false) && self.trailing_stop_increment.is_some() {
+            return Err(Box::new(ApiError {
+                message: "trailing_stop_increment cannot be set when trailing_stop is false.".to_string(),
+            }));
+        }
+
+        // Constraint: if trailing_stop equals true, then DO NOT set stop_level.
+        if self.trailing_stop == Some(true) && self.stop_level.is_some() {
+            return Err(Box::new(ApiError {
+                message: "stop_level cannot be set when trailing_stop is true.".to_string(),
+            }));
+        }
+
+        // Constraint: if trailing_stop equals true, then guaranteed_stop must be false.
+        if self.trailing_stop == Some(true) && self.guaranteed_stop != false {
+            return Err(Box::new(ApiError {
+                message: "guaranteed_stop must be false when trailing_stop is true.".to_string(),
+            }));
+        }
+
+        // Constraint: if trailing_stop equals true, then set stop_distance, trailing_stop_increment.
+        if self.trailing_stop == Some(true) && (self.stop_distance.is_none() || self.trailing_stop_increment.is_none()) {
+            return Err(Box::new(ApiError {
+                message: "Both stop_distance and trailing_stop_increment must be set when trailing_stop is true.".to_string(),
+            }));
+        }
+
+        // Constraint: set only one of limit_level, limit_distance.
+        if self.limit_level.is_some() && self.limit_distance.is_some() {
+            return Err(Box::new(ApiError {
+                message: "Only one of limit_level or limit_distance can be set.".to_string(),
+            }));
+        }
+
+        // Constraint: set only one of stop_level, stop_distance.
+        if self.stop_level.is_some() && self.stop_distance.is_some() {
+            return Err(Box::new(ApiError {
+                message: "Only one of stop_level or stop_distance can be set.".to_string(),
+            }));
+        }
+
+        // Constraint: field currency_code follows pattern(regexp="[A-Z]{3}").
+        if !CURRENCY_CODE_REGEX.is_match(&self.currency_code) {
+            return Err(Box::new(ApiError {
+                message: "Currency code field is invalid.".to_string(),
+            }));
+        }
+
+        // Constraint: field deal_reference follows pattern(regexp="[A-Za-z0-9_\\-]{1,30}")].
+        if let Some(deal_reference) = &self.deal_reference {
+            if !DEAL_REFERENCE_REGEX.is_match(deal_reference) {
+                return Err(Box::new(ApiError {
+                    message: "Deal reference field is invalid.".to_string(),
+                }));
+            }
+        }
+
+        // Constraint: field epic follows pattern(regexp="[A-Za-z0-9._]{6,30}").
+        if !EPIC_REGEX.is_match(&self.epic) {
+            return Err(Box::new(ApiError {
+                message: "Epic field is invalid.".to_string(),
+            }));
+        }
+
+        // Constraint: field expiry follows pattern(regexp="(\\d{2}-)?[A-Z]{3}-\\d{2}|-|DFB").
+        if !EXPIRY_REGEX.is_match(&self.expiry) {
+            return Err(Box::new(ApiError {
+                message: "Expiry field is invalid.".to_string(),
+            }));
+        }
+
+        // Constraint: check precision of size is not more than 12 decimal places.
+        let size_str = format!("{}", self.size);
+        let parts: Vec<&str> = size_str.split('.').collect();
+        if parts.len() == 2 && parts[1].len() > 12 {
+            return Err(Box::new(ApiError {
+                message: "Size field has more thatn 12 decimal places.".to_string(),
+            }));
+        }
+
+        Ok(())
+    }
+}
+
+/// Response to position open request (POST /positions/otc).
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PositionPostResponse {
+    /// Deal reference of the transaction.
+    pub deal_reference: String,
+}
+
+impl ValidateResponse for PositionPostResponse {}
 
 /// Position data.
 #[derive(Debug, Deserialize, Serialize)]

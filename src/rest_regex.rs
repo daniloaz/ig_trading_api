@@ -5,8 +5,16 @@ pub static ACCOUNT_ID_REGEX: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"^[A-Za-z0-9\-]{1,30}$").expect("Invalid regex pattern ACCOUNT_ID_REGEX!")
 });
 
+pub static CURRENCY_CODE_REGEX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"^[A-Z]{3}$").expect("Invalid regex pattern CURRENCY_CODE_REGEX!")
+});
+
 pub static DEAL_ID_REGEX: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"^[A-Za-z0-9\-]{1,30}$").expect("Invalid regex pattern DEAL_ID_REGEX!")
+});
+
+pub static DEAL_REFERENCE_REGEX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"^[A-Za-z0-9_\-]{1,30}$").expect("Invalid regex pattern DEAL_REFERENCE_REGEX!")
 });
 
 pub static EPIC_REGEX: Lazy<Regex> = Lazy::new(|| {

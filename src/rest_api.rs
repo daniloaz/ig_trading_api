@@ -210,6 +210,26 @@ impl RestApi {
         Ok((headers, positions))
     }
 
+    /// Returns a specific open position for the active account.
+    pub async fn position_post(
+        &self,
+        body: PositionPostRequest,
+    ) -> Result<(Value, PositionPostResponse), Box<dyn Error>> {
+
+        // Send the request to the REST client.
+        let (header_map, response_value) = self
+            .client
+            .delete("positions/otc".to_string(), Some(2), &Some(body))
+            .await?;
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+        // Convert the serde_json::Value response to Session model.
+        let position_post_response = PositionPostResponse::from_value(&response_value)?;
+
+        Ok((headers, position_post_response))
+    }
+
     /// Returns all open positions for the active account.
     pub async fn positions_get(
         &self,
