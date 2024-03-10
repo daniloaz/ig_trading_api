@@ -106,16 +106,7 @@ pub struct Sentiment {
     pub short_position_percentage: f64,
 }
 
-#[derive(Debug, Default, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct UpdatePosition {
-    pub guaranteed_stop: Option<bool>,
-    pub limit_level: Option<f64>,
-    pub stop_level: Option<f64>,
-    pub trailing_stop: Option<bool>,
-    pub trailing_stop_distance: Option<f64>,
-    pub trailing_stop_increment: Option<f64>,
-}
+
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -1169,6 +1160,7 @@ pub struct ActivityHistoryGetRequest {
     pub page_size: Option<u32>,
 }
 
+/// Implement the ValidateRequest trait for the ActivityHistoryGetRequest struct.
 impl ValidateRequest for ActivityHistoryGetRequest {
     fn validate(&self) -> Result<(), Box<dyn Error>> {
         // Check if the 'from' date is not greater than today.
@@ -1312,6 +1304,7 @@ pub struct TransactionHistoryGetRequest {
     pub page_number: Option<u32>,
 }
 
+/// Implement the ValidateRequest trait for the TransactionHistoryGetRequest struct.
 impl ValidateRequest for TransactionHistoryGetRequest {
     fn validate(&self) -> Result<(), Box<dyn Error>> {
         // Check if the 'from' date is not greater than today.
@@ -1529,6 +1522,7 @@ pub struct PositionDeleteRequest {
     pub time_in_force: Option<TimeInForce>,
 }
 
+/// Implements the validation of the PositionDeleteRequest.
 impl ValidateRequest for PositionDeleteRequest {
     fn validate(&self) -> Result<(), Box<dyn Error>> {
         // Constraint: Pattern(regexp=".{1,30}")
@@ -1631,6 +1625,7 @@ pub struct PositionGetRequest {
     pub deal_id: String,
 }
 
+/// Implements the validation of the PositionGetRequest.
 impl ValidateRequest for PositionGetRequest {
     fn validate(&self) -> Result<(), Box<dyn Error>> {
         if !DEAL_ID_REGEX.is_match(&self.deal_id) {
@@ -1707,6 +1702,7 @@ pub struct PositionPostRequest {
     pub trailing_stop_increment: Option<f64>,
 }
 
+/// Implements the validation of the PositionPostRequest.
 impl ValidateRequest for PositionPostRequest {
     fn validate(&self) -> Result<(), Box<dyn Error>> {
         // Constraint: if limit_distance is set, then force_open must be true.
@@ -1866,6 +1862,77 @@ pub struct PositionPostResponse {
 }
 
 impl ValidateResponse for PositionPostResponse {}
+
+/// Request to update a position by sending a PUT request to the /positions/otc/{deal_id} endpoint.
+#[derive(Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PositionPutRequest {
+    /// True if a guaranteed stop is required.
+    pub guaranteed_stop: Option<bool>,
+    /// Limit level.
+    pub limit_level: Option<f64>,
+    /// Stop level.
+    pub stop_level: Option<f64>,
+    /// True if Trailing stop is required.
+    pub trailing_stop: Option<bool>,
+    ///	Trailing stop distance.
+    pub trailing_stop_distance: Option<f64>,
+    /// Trailing stop increment.
+    pub trailing_stop_increment: Option<f64>,
+}
+
+/// Implement the ValidateRequest trait for PositionPutRequest.
+impl ValidateRequest for PositionPutRequest {
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        // Constraint: if guaranteed_stop equals true, then set stop_level.
+        if self.guaranteed_stop == Some(true) && self.stop_level.is_none() {
+            return Err(Box::new(ApiError {
+                message: "stop_level must be set when guaranteed_stop is true.".to_string(),
+            }));
+        }
+
+        // Constraint: if guaranteed_stop equals true, then trailing_stop must be false.
+        if self.guaranteed_stop == Some(true) && self.trailing_stop == Some(true) {
+            return Err(Box::new(ApiError {
+                message: "trailing_stop must be false when guaranteed_stop is true.".to_string(),
+            }));
+        }
+
+        // Constraint: if trailing_stop equals false, then DO NOT set trailing_stop_distance, trailing_stop_increment.
+        if self.trailing_stop == Some(false) && (self.trailing_stop_distance.is_some() || self.trailing_stop_increment.is_some()) {
+            return Err(Box::new(ApiError {
+                message: "Neither trailing_stop_distance nor trailing_stop_increment can be set when trailing_stop is false.".to_string(),
+            }));
+        }
+
+        // Constraint: if trailing_stop equals true, then guaranteed_stop must be false.
+        if self.trailing_stop == Some(true) && self.guaranteed_stop == Some(true) {
+            return Err(Box::new(ApiError {
+                message: "guaranteed_stop must be false when trailing_stop is true.".to_string(),
+            }));
+        }
+
+        // Constraint: if trailing_stop equals true, then set trailing_stop_distance, trailing_stop_increment, stop_level.
+        if self.trailing_stop == Some(true) && (self.trailing_stop_distance.is_none() || self.trailing_stop_increment.is_none() || self.stop_level.is_none()) {
+            return Err(Box::new(ApiError {
+                message: "All of trailing_stop_distance, trailing_stop_increment, stop_level must be set when trailing_stop is true.".to_string(),
+            }));
+        }
+
+        Ok(())
+    }
+
+}
+
+/// Response to position update request (PUT /positions/otc/{deal_id}).
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PositionPutResponse {
+    /// Deal reference.
+    pub deal_reference: String,
+}
+
+impl ValidateResponse for PositionPutResponse {}
 
 /// Position data.
 #[derive(Debug, Deserialize, Serialize)]
