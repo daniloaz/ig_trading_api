@@ -1,6 +1,7 @@
 use crate::common::*;
 use crate::rest_regex::*;
 use chrono::{NaiveDateTime, Utc};
+use serde::de;
 use serde::de::DeserializeOwned;
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize, Serializer};
@@ -780,29 +781,29 @@ pub struct ConfirmsGetResponse {
     /// Instrument epic identifier.
     pub epic: String,
     /// Instrument expiry.
-    pub expiry: String,
+    pub expiry: Option<String>,
     /// True if guaranteed stop.
     pub guaranteed_stop: bool,
     /// Level at which the deal was opened.
-    pub level: f64,
+    pub level: Option<f64>,
     /// Limit distance.
-    pub limit_distance: f64,
+    pub limit_distance: Option<f64>,
     /// Limit level.
-    pub limit_level: f64,
+    pub limit_level: Option<f64>,
     /// Profit.
-    pub profit: f64,
+    pub profit: Option<f64>,
     /// Profit currency.
-    pub profit_currency: String,
+    pub profit_currency: Option<String>,
     /// Describes the error (or success) condition for the specified trading operation.
     pub reason: DealReason,
     /// Size of the deal.
-    pub size: f64,
+    pub size: Option<f64>,
     /// Position status.
-    pub status: PositionStatus,
+    pub status: Option<PositionStatus>,
     /// Stop distance.
-    pub stop_distance: f64,
+    pub stop_distance: Option<f64>,
     /// Stop level.
-    pub stop_level: f64,
+    pub stop_level: Option<f64>,
     /// True if trailing stop.
     pub trailing_stop: bool,
 }
@@ -1197,10 +1198,11 @@ pub enum ActivityType {
 }
 
 /// Deal direction.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Direction {
     /// Buy.
+    #[default]
     Buy,
     /// Sell.
     Sell,
@@ -1433,7 +1435,7 @@ pub enum InstrumentType {
 }
 
 /// Describes the order level model to be used for a position operation.
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum OrderType {
     /// Limit orders get executed at the price seen by IG at the moment of booking a trade.
@@ -1441,6 +1443,7 @@ pub enum OrderType {
     Limit,
     /// Market orders get executed at the price seen by the IG at the time of booking the trade.
     /// A level cannot be specified. Not applicable to BINARY instruments.
+    #[default]
     Market,
     /// Quote orders get executed at the specified level. The level has to be accompanied by a valid
     /// quote id. This type is only available subject to agreement with IG.
@@ -1628,7 +1631,7 @@ pub struct PositionPostRequest {
     /// Deal reference. A user-defined reference identifying the submission of the order.
     pub deal_reference: Option<String>,
     /// Deal direction.
-    pub direction: Option<Direction>,
+    pub direction: Direction,
     /// Instrument epic identifier.
     pub epic: String,
     /// Instrument expiry.
@@ -1644,7 +1647,7 @@ pub struct PositionPostRequest {
     /// Limit level.
     pub limit_level: Option<f64>,
     /// Describes the order level model to be used for a position operation.
-    pub order_type: Option<OrderType>,
+    pub order_type: OrderType,
     /// Lightstreamer price quote identifier.
     pub quote_id: Option<String>,
     /// Deal size.
@@ -1700,28 +1703,28 @@ impl ValidateRequest for PositionPostRequest {
         }
 
         // Constraint: if order_type equals LIMIT, then DO NOT set quote_id.
-        if self.order_type == Some(OrderType::Limit) && self.quote_id.is_some() {
+        if self.order_type == OrderType::Limit && self.quote_id.is_some() {
             return Err(Box::new(ApiError {
                 message: "quote_id cannot be set when order_type is LIMIT.".to_string(),
             }));
         }
 
         // Constraint: if order_type equals LIMIT, then set level.
-        if self.order_type == Some(OrderType::Limit) && self.level.is_none() {
+        if self.order_type == OrderType::Limit && self.level.is_none() {
             return Err(Box::new(ApiError {
                 message: "level must be set when order_type is LIMIT.".to_string(),
             }));
         }
 
         // Constraint: if order_type equals MARKET, then DO NOT set level, quote_id.
-        if self.order_type == Some(OrderType::Market) && (self.level.is_some() || self.quote_id.is_some()) {
+        if self.order_type == OrderType::Market && (self.level.is_some() || self.quote_id.is_some()) {
             return Err(Box::new(ApiError {
                 message: "Neither level nor quote_id can be set when order_type is MARKET.".to_string(),
             }));
         }
 
         // Constraint: if order_type equals QUOTE, then set level, quote_id.
-        if self.order_type == Some(OrderType::Market) && (self.level.is_none() || self.quote_id.is_none()) {
+        if self.order_type == OrderType::Quote && (self.level.is_none() || self.quote_id.is_none()) {
             return Err(Box::new(ApiError {
                 message: "Both level and quote_id must be set when order_type is QUOTE.".to_string(),
             }));
@@ -1917,13 +1920,13 @@ pub struct PositionData {
     /// Level at which the position was opened.
     pub level: f64,
     /// Limit level.
-    pub limit_level: f64,
+    pub limit_level: Option<f64>,
     /// Limited Risk Premium.
-    pub limited_risk_premium: f64,
+    pub limited_risk_premium: Option<f64>,
     /// Deal size.
     pub size: f64,
     /// Stop level.
-    pub stop_level: f64,
+    pub stop_level: Option<f64>,
     /// Trailing step size.
     pub trailing_step: Option<f64>,
     /// Trailing stop distance.

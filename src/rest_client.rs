@@ -54,21 +54,22 @@ impl RestClient {
 
         let response = self
             .client
-            .delete(&format!("{}/{}", &self.base_url, method))
+            .post(&format!("{}/{}", &self.base_url, method))
             .json(&body)
             .headers(self.auth_headers.clone().unwrap_or(HeaderMap::new()))
             .headers(self.common_headers.clone())
             .header("Version", version)
+            .header("_method", "DELETE".to_string())
             .send()
             .await?;
 
         // Check the response status code.
         match response.status() {
-            // If the status code is 204 No Content or 200 OK, return success.
+            // If the status code is 204 No Content, return success.
             StatusCode::NO_CONTENT => Ok((response.headers().clone(), json!({}))),
             // If the status code is 200 OK, return success and response body.
-            StatusCode::ACCEPTED => Ok((response.headers().clone(), response.json().await?)),
-            // If the status code is not 204 No Content, return an error.
+            StatusCode::OK => Ok((response.headers().clone(), response.json().await?)),
+            // If the status code is other, return an error.
             _ => Err(Box::new(ApiError {
                 message: format!(
                     "DELETE operation using method '{}' failed with status code: {:?} - {:?}",

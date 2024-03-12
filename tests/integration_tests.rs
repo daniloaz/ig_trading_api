@@ -28,6 +28,9 @@ async fn get_or_init_rest_api() -> Arc<RestApi> {
             Err(e) => panic!("Failed to create and initialize REST API: {}", e),
         };
 
+        // Force tests are performed in the DEMO environment.
+        rest_api.client.config.execution_environment = ExecutionEnvironment::Demo;
+
         if !auto_login {
             let _ = rest_api.client.login();
         }
@@ -448,6 +451,139 @@ async fn history_transactions_get_works() {
 // POSITIONS ENDPOINT INTEGRATION TESTS.
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#[tokio::test]
+async fn positions_flow_works() {
+    // Get the API instance.
+    let api = get_or_init_rest_api().await;
+
+    // First create a new position.
+    let position_request = PositionPostRequest {
+        currency_code: "EUR".to_string(),
+        deal_reference: None,
+        direction: Direction::Buy,
+        epic: "IX.D.DAX.IFMM.IP".to_string(),
+        expiry: "-".to_string(), // "-" for no expiry.
+        force_open: true,
+        guaranteed_stop: false,
+        level: None,
+        limit_distance: None,
+        limit_level: None,
+        order_type: OrderType::Market,
+        quote_id: None,
+        size: 1.0,
+        stop_distance: None,
+        stop_level: None,
+        time_in_force: None,
+        trailing_stop: None,
+        trailing_stop_increment: None,
+    };
+
+    let response_1 = match api.position_post(position_request).await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error creating a new position: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response_1.0).unwrap()
+    );
+
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response_1.1).unwrap()
+    );
+
+    let deal_reference = response_1.1.deal_reference.clone();
+
+    // Get the trade confirmation for the new position.
+    let response_2 = match api.confirms_get(ConfirmsGetRequest {
+        deal_reference: deal_reference.clone(),
+    }).await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error getting trade confirmation for the new position: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response_2.0).unwrap()
+    );
+
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response_2.1).unwrap()
+    );
+
+    // Get the list of positions.
+    let response_3 = match api.positions_get().await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error getting list of positions: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response_3.0).unwrap()
+    );
+
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response_3.1).unwrap()
+    );
+
+    sleep();
+
+    // Close the new position.
+    let position = match response_3.1.positions.last() {
+        Some(position) => position,
+        None => {
+            println!("No positions found.");
+            panic!("Test failed due to error.");
+        }
+    };
+
+    let deal_id = position.position.deal_id.clone();
+
+    let position_close_request = PositionDeleteRequest {
+        deal_id: Some(deal_id),
+        direction: Some(Direction::Sell),
+        epic: None,
+        expiry: Some("-".to_string()), // "-" for no expiry.
+        level: None,
+        order_type: Some(OrderType::Market),
+        quote_id: None,
+        size: 1.0,
+        time_in_force: None,
+    };
+
+    let response_4 = match api.position_delete(position_close_request).await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error closing the new position: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response_4.0).unwrap()
+    );
+
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response_4.1).unwrap()
+    );
+
+    sleep();
+}
 
 #[tokio::test]
 async fn positions_get_works() {
