@@ -274,6 +274,51 @@ impl RestApi {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     //
+    // SPRINT MARKET METHODS.
+    //
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /// Returns all open sprint market positions for the active account.
+    pub async fn positions_sprintmarkets_get(
+        &self,
+    ) -> Result<(Value, SprintMarketPositionsGetResponse), Box<dyn Error>> {
+
+        // Send the request to the REST client.
+        let (header_map, response_value) = self
+            .client
+            .get("positions/sprintmarkets".to_string(), Some(2), &None::<Empty>)
+            .await?;
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+        // Convert the serde_json::Value response to Session model.
+        let positions = SprintMarketPositionsGetResponse::from_value(&response_value)?;
+
+        Ok((headers, positions))
+    }
+
+    /// Creates a sprint market position.
+    pub async fn positions_sprintmarkets_post(
+        &self,
+        body: SprintMarketPositionsPostRequest,
+    ) -> Result<(Value, SprintMarketPositionsPostResponse), Box<dyn Error>> {
+
+        // Send the request to the REST client.
+        let (header_map, response_value) = self
+            .client
+            .delete("positions/sprintmarkets".to_string(), Some(1), &Some(body))
+            .await?;
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+        // Convert the serde_json::Value response to Session model.
+        let position_post_response = SprintMarketPositionsPostResponse::from_value(&response_value)?;
+
+        Ok((headers, position_post_response))
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //
     // SESSION METHODS.
     //
     ////////////////////////////////////////////////////////////////////////////////////////////////////////

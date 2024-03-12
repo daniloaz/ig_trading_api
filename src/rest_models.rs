@@ -108,48 +108,7 @@ pub struct Sentiment {
 
 
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SprintMarketPositions {
-    pub sprint_market_positions: Vec<SprintMarketPosition>,
-}
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SprintMarketPosition {
-    pub created_date: String,
-    pub currency: String,
-    pub deal_id: String,
-    pub description: String,
-    pub direction: Direction,
-    pub epic: String,
-    pub expiry_time: String,
-    pub instrument_name: String,
-    pub market_status: MarketStatus,
-    pub payout_amount: f64,
-    pub size: f64,
-    pub strike_level: f64,
-}
-
-#[derive(Debug, Default, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CreateSprintMarketPosition {
-    pub deal_reference: Option<String>,
-    pub direction: Option<Direction>,
-    pub epic: Option<String>,
-    pub expiry_period: Option<SprintMarketExpiryPeriod>,
-    pub size: Option<f64>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum SprintMarketExpiryPeriod {
-    FiveMinutes,
-    OneMinute,
-    SixtyMinutes,
-    TwentyMinutes,
-    TwoMinutes,
-}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -1980,6 +1939,143 @@ pub enum TimeInForce {
     /// Fill or kill.
     FillOrKill,
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// POSITIONS SPRINTMARKETS ENDPOINT MODELS.
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/// Sprint market expiry period.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum SprintMarketExpiryPeriod {
+    // 5 minutes.
+    FiveMinutes,
+    // 1 minute.
+    OneMinute,
+    // 60 minutes.
+    SixtyMinutes,
+    // 20 minutes.
+    TwentyMinutes,
+    // 2 minutes.
+    TwoMinutes,
+}
+
+/// Sprint market position data.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SprintMarketPosition {
+    /// Date the position was opened.
+    pub created_date: String,
+    /// Currency of the payout.
+    pub currency: String,
+    /// Deal identifier.
+    pub deal_id: String,
+    /// Description.
+    pub description: String,
+    /// Deal direction.
+    pub direction: Direction,
+    /// Instrument epic identifier.
+    pub epic: String,
+    /// Expiry time.
+    pub expiry_time: String,
+    /// Instrument name.
+    pub instrument_name: String,
+    /// Describes the current status of a given market.
+    pub market_status: MarketStatus,
+    /// Payout amount.
+    pub payout_amount: f64,
+    /// Size.
+    pub size: f64,
+    /// Strike price.
+    pub strike_level: f64,
+}
+
+/// Request to get the sprint market positions by sending a GET request to the /positions/sprintmarkets endpoint.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SprintMarketPositionsGetResponse {
+    /// List of sprint market positions.
+    pub sprint_market_positions: Vec<SprintMarketPosition>,
+}
+
+/// Validate the sprint market positions response.
+impl ValidateResponse for SprintMarketPositionsGetResponse {
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        for sprint_market_position in &self.sprint_market_positions {
+            // Constraint: field currency follows pattern(regexp="[A-Z]{3}").
+            if !CURRENCY_CODE_REGEX.is_match(&sprint_market_position.currency) {
+                return Err(Box::new(ApiError {
+                    message: format!("Currency code '{}' field is invalid.", sprint_market_position.currency),
+                }));
+            }
+        }
+
+        Ok(())
+    }
+}
+
+/// Create sprint market position request. A request will be executed as a market order based on
+/// the current trade odds and strike level. An indicative payout amount (payout = premium / odds)
+/// can be evaluated by obtaining the binary odds ratio from the market details endpoint prior to
+/// placing an order.
+#[derive(Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SprintMarketPositionsPostRequest {
+    /// A user-defined reference identifying the submission of the order.
+    pub deal_reference: Option<String>,
+    /// Deal direction.
+    pub direction: Option<Direction>,
+    /// Instrument epic identifier.
+    pub epic: String,
+    /// Sprint market expiry period.
+    pub expiry_period: Option<SprintMarketExpiryPeriod>,
+    /// Deal size.
+    pub size: f64,
+}
+
+/// Validate the sprint market position request.
+impl ValidateRequest for SprintMarketPositionsPostRequest {
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        // Constraint: field deal_reference follows pattern(regexp="[A-Za-z0-9_\\-]{1,30}")].
+        if let Some(deal_reference) = &self.deal_reference {
+            if !DEAL_REFERENCE_REGEX.is_match(deal_reference) {
+                return Err(Box::new(ApiError {
+                    message: "Deal reference field is invalid.".to_string(),
+                }));
+            }
+        }
+
+        // Constraint: field epic follows pattern(regexp="[A-Za-z0-9._]{6,30}").
+        if !EPIC_REGEX.is_match(&self.epic) {
+            return Err(Box::new(ApiError {
+                message: "Epic field is invalid.".to_string(),
+            }));
+        }
+
+        // Constraint: check precision of size is not more than 12 decimal places.
+        let size_str = format!("{}", self.size);
+        let parts: Vec<&str> = size_str.split('.').collect();
+        if parts.len() == 2 && parts[1].len() > 12 {
+            return Err(Box::new(ApiError {
+                message: "Size field has more thatn 12 decimal places.".to_string(),
+            }));
+        }
+
+        Ok(())
+    }
+}
+
+/// Response to the create sprint market position request.
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SprintMarketPositionsPostResponse {
+    /// Deal reference of the transaction.
+    pub deal_reference: String,
+}
+
+impl ValidateResponse for SprintMarketPositionsPostResponse {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
