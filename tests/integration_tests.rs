@@ -336,42 +336,6 @@ async fn accounts_preferences_put_works() {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// CONFIRMS ENDPOINT INTEGRATION TESTS.
-//
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-#[tokio::test]
-async fn confirms_get_works() {
-    // Get the API instance.
-    let api = get_or_init_rest_api().await;
-
-    // TODO: Replace the deal_reference with a valid deal reference.
-    let params = ConfirmsGetRequest {
-        deal_reference: "76GAP71HRC2SAQ4B".to_string(),
-    };
-
-    let response = match api.confirms_get(params).await {
-        Ok(response) => response,
-        Err(e) => {
-            println!("Error getting confirms: {:?}", e);
-            panic!("Test failed due to error.");
-        }
-    };
-
-    println!(
-        "Response headers: {}",
-        serde_json::to_string_pretty(&response.0).unwrap()
-    );
-    println!(
-        "Response body: {}",
-        serde_json::to_string_pretty(&response.1).unwrap()
-    );
-
-    sleep();
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
 // HISTORY ENDPOINT INTEGRATION TESTS.
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -457,7 +421,9 @@ async fn positions_flow_works() {
     // Get the API instance.
     let api = get_or_init_rest_api().await;
 
+    //
     // First create a new position.
+    //
     let position_request = PositionPostRequest {
         currency_code: "EUR".to_string(),
         deal_reference: None,
@@ -499,7 +465,9 @@ async fn positions_flow_works() {
 
     let deal_reference = response_1.1.deal_reference.clone();
 
+    //
     // Get the trade confirmation for the new position.
+    //
     let response_2 = match api.confirms_get(ConfirmsGetRequest {
         deal_reference: deal_reference.clone(),
     }).await {
@@ -520,7 +488,13 @@ async fn positions_flow_works() {
         serde_json::to_string_pretty(&response_2.1).unwrap()
     );
 
-    // Get the list of positions.
+    let deal_id = response_2.1.deal_id.clone();
+    let position_level = response_2.1.level.unwrap();
+    println!("Position level: {}", position_level);
+
+    //
+    // Get the list of open positions.
+    //
     let response_3 = match api.positions_get().await {
         Ok(response) => response,
         Err(e) => {
@@ -541,33 +515,15 @@ async fn positions_flow_works() {
 
     sleep();
 
-    // Close the new position.
-    let position = match response_3.1.positions.last() {
-        Some(position) => position,
-        None => {
-            println!("No positions found.");
-            panic!("Test failed due to error.");
-        }
-    };
+    //
+    // Get details of the new position.
+    //
+    let params = PositionGetRequest { deal_id: deal_id.clone() };
 
-    let deal_id = position.position.deal_id.clone();
-
-    let position_close_request = PositionDeleteRequest {
-        deal_id: Some(deal_id),
-        direction: Some(Direction::Sell),
-        epic: None,
-        expiry: Some("-".to_string()), // "-" for no expiry.
-        level: None,
-        order_type: Some(OrderType::Market),
-        quote_id: None,
-        size: 1.0,
-        time_in_force: None,
-    };
-
-    let response_4 = match api.position_delete(position_close_request).await {
+    let response_4 = match api.position_get(params).await {
         Ok(response) => response,
         Err(e) => {
-            println!("Error closing the new position: {:?}", e);
+            println!("Error getting position '{}': {:?}", deal_id, e);
             panic!("Test failed due to error.");
         }
     };
@@ -583,78 +539,71 @@ async fn positions_flow_works() {
     );
 
     sleep();
-}
 
-#[tokio::test]
-async fn positions_get_works() {
-    // Get the API instance.
-    let api = get_or_init_rest_api().await;
+    //
+    // Update the position.
+    //
+    let position_update_request = PositionPutRequest {
+        guaranteed_stop: Some(true),
+        limit_level: Some(position_level + 100.0),
+        stop_level: Some(position_level - 50.0),
+        trailing_stop: None,
+        trailing_stop_distance: None,
+        trailing_stop_increment: None,
+    };
 
-    let response = match api.positions_get().await {
+    let response_5 = match api.position_put(position_update_request, deal_id.clone()).await {
         Ok(response) => response,
         Err(e) => {
-            println!("Error getting list of positions: {:?}", e);
+            println!("Error updating the new position: {:?}", e);
             panic!("Test failed due to error.");
         }
     };
 
     println!(
         "Response headers: {}",
-        serde_json::to_string_pretty(&response.0).unwrap()
+        serde_json::to_string_pretty(&response_5.0).unwrap()
     );
+
     println!(
         "Response body: {}",
-        serde_json::to_string_pretty(&response.1).unwrap()
+        serde_json::to_string_pretty(&response_5.1).unwrap()
     );
 
     sleep();
-}
 
-#[tokio::test]
-async fn position_get_works() {
-    // Get the API instance.
-    let api = get_or_init_rest_api().await;
-
-    // First get the list of positions.
-    let response_1 = match api.positions_get().await {
-        Ok(response) => response,
-        Err(e) => {
-            println!("Error getting list of positions: {:?}", e);
-            panic!("Test failed due to error.");
-        }
+    //
+    // Close the position.
+    //
+    let position_close_request = PositionDeleteRequest {
+        deal_id: Some(deal_id),
+        direction: Some(Direction::Sell),
+        epic: None,
+        expiry: Some("-".to_string()), // "-" for no expiry.
+        level: None,
+        order_type: Some(OrderType::Market),
+        quote_id: None,
+        size: 1.0,
+        time_in_force: None,
     };
 
-    // Take the first position from the list.
-    let position = match response_1.1.positions.first() {
-        Some(position) => position,
-        None => {
-            println!("No positions found.");
-            panic!("Test failed due to error.");
-        }
-    };
-
-    let deal_id = position.position.deal_id.clone();
-
-    let params = PositionGetRequest { deal_id: deal_id.clone() };
-
-    let response_2 = match api.position_get(params).await {
+    let response_6 = match api.position_delete(position_close_request).await {
         Ok(response) => response,
         Err(e) => {
-            println!("Error getting position '{}': {:?}", deal_id, e);
+            println!("Error closing the new position: {:?}", e);
             panic!("Test failed due to error.");
         }
     };
 
     println!(
         "Response headers: {}",
-        serde_json::to_string_pretty(&response_2.0).unwrap()
-    );
-    println!(
-        "Response body: {}",
-        serde_json::to_string_pretty(&response_2.1).unwrap()
+        serde_json::to_string_pretty(&response_6.0).unwrap()
     );
 
-    assert_eq!(response_2.1.position.deal_id, deal_id);
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response_6.1).unwrap()
+    );
 
     sleep();
 }

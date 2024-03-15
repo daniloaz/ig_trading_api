@@ -242,7 +242,7 @@ impl RestApi {
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
-            .delete(url, Some(2), &Some(body))
+            .put(url, Some(2), &body)
             .await?;
 
         // Convert header_map to json.
