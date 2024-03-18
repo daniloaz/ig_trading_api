@@ -399,6 +399,7 @@ impl RestApi {
         Ok((headers, encryption_key_response))
     }
 
+    /// Refresh the current session, obtaining new session tokens for subsequent API access.
     pub async fn session_refresh_token_post(
         &self,
         body: &SessionRefreshTokenPostRequest,
@@ -420,4 +421,103 @@ impl RestApi {
         Ok((headers, session_refresh_token_response))
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //
+    // WORKINGORDERS ENDPOINTS.
+    //
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /// Deletes a working order for the active account.
+    pub async fn workingorders_delete (
+        &self,
+        deal_id: String,
+    ) -> Result<(Value, WorkingOrderDeleteResponse), Box<dyn Error>> {
+
+        let params = WorkingOrderDeleteRequest {
+            deal_id: deal_id.clone(),
+        };
+
+        // Validate the params.
+        params.validate()?;
+
+        let url = format!("workingorders/otc/{}", params.deal_id);
+
+        // Send the request to the REST client.
+        let (header_map, response_value) = self
+            .client
+            .delete(url, Some(2), &None::<Empty>)
+            .await?;
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+        // Deserialize the response_value to WorkingOrdersDeleteResponse.
+        let working_orders = WorkingOrderDeleteResponse::from_value(&response_value)?;
+
+        Ok((headers, working_orders))
+    }
+
+    /// Get list of working orders.
+    pub async fn workingorders_get (
+        &self,
+    ) -> Result<(Value, WorkingOrdersGetResponse), Box<dyn Error>> {
+        // Send the request to the REST client.
+        let (header_map, response_value) = self
+            .client
+            .get("workingorders".to_string(), Some(2), &None::<Empty>)
+            .await?;
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+        // Deserialize the response_value to WorkingOrdersGetResponse.
+        let working_orders = WorkingOrdersGetResponse::from_value(&response_value)?;
+
+        Ok((headers, working_orders))
+    }
+
+    /// Create a new working order.
+    pub async fn workingorders_post (
+        &self,
+        body: &WorkingOrderPostRequest,
+    ) -> Result<(Value, WorkingOrderPostResponse), Box<dyn Error>> {
+        // Validate the body.
+        body.validate()?;
+
+        // Send the request to the REST client.
+        let (header_map, response_value) = self
+            .client
+            .post("workingorders/otc".to_string(), Some(2), body)
+            .await?;
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+        // Deserialize the response_value to WorkingOrdersPostResponse.
+        let working_orders = WorkingOrderPostResponse::from_value(&response_value)?;
+
+        Ok((headers, working_orders))
+    }
+
+    /// Update a working order for the active account.
+    pub async fn workingorders_put (
+        &self,
+        body: &WorkingOrderPutRequest,
+        deal_id: String,
+    ) -> Result<(Value, WorkingOrderPutResponse), Box<dyn Error>> {
+        // Validate the body.
+        body.validate()?;
+
+        let url = format!("workingorders/otc/{}", deal_id);
+
+        // Send the request to the REST client.
+        let (header_map, response_value) = self
+            .client
+            .put(url, Some(2), body)
+            .await?;
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+        // Deserialize the response_value to WorkingOrdersPutResponse.
+        let working_orders = WorkingOrderPutResponse::from_value(&response_value)?;
+
+        Ok((headers, working_orders))
+    }
 }

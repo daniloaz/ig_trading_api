@@ -204,6 +204,7 @@ async fn accounts_preferences_put_works() {
     //
     // First get the current account preferences.
     //
+    println!("Getting the current account preferences...");
     let response_1 = match api.accounts_preferences_get().await {
         Ok(response) => response,
         Err(e) => {
@@ -221,9 +222,12 @@ async fn accounts_preferences_put_works() {
         serde_json::to_string_pretty(&response_1.1).unwrap()
     );
 
+    sleep();
+
     //
     // According to the current account preferences, update the trailing_stops_enabled field.
     //
+    println!("Updating the account preferences...");
     let body_1;
     let body_2;
     match response_1.1.trailing_stops_enabled {
@@ -262,9 +266,12 @@ async fn accounts_preferences_put_works() {
         serde_json::to_string_pretty(&response_2.1).unwrap()
     );
 
+    sleep();
+
     //
     // Then get the updated account preferences.
     //
+    println!("Getting the updated account preferences...");
     let response_3 = match api.accounts_preferences_get().await {
         Ok(response) => response,
         Err(e) => {
@@ -282,9 +289,12 @@ async fn accounts_preferences_put_works() {
         serde_json::to_string_pretty(&response_3.1).unwrap()
     );
 
+    sleep();
+
     //
     // Update the account preferences back to the original state.
     //
+    println!("Updating the account preferences back to the original state...");
     let response_4 = match api.accounts_preferences_put(&body_2).await {
         Ok(response) => response,
         Err(e) => {
@@ -302,9 +312,12 @@ async fn accounts_preferences_put_works() {
         serde_json::to_string_pretty(&response_4.1).unwrap()
     );
 
+    sleep();
+
     //
     // Finally, get the account preferences again to verify that the update was successful.
     //
+    println!("Getting the account preferences again...");
     let response_5 = match api.accounts_preferences_get().await {
         Ok(response) => response,
         Err(e) => {
@@ -424,6 +437,7 @@ async fn positions_flow_works() {
     //
     // First create a new position.
     //
+    println!("Creating a new position...");
     let position_request = PositionPostRequest {
         currency_code: "EUR".to_string(),
         deal_reference: None,
@@ -468,6 +482,7 @@ async fn positions_flow_works() {
     //
     // Get the trade confirmation for the new position.
     //
+    println!("Getting trade confirmation for the new position...");
     let response_2 = match api.confirms_get(ConfirmsGetRequest {
         deal_reference: deal_reference.clone(),
     }).await {
@@ -495,6 +510,7 @@ async fn positions_flow_works() {
     //
     // Get the list of open positions.
     //
+    println!("Getting list of open positions...");
     let response_3 = match api.positions_get().await {
         Ok(response) => response,
         Err(e) => {
@@ -518,6 +534,7 @@ async fn positions_flow_works() {
     //
     // Get details of the new position.
     //
+    println!("Getting details of the position...");
     let params = PositionGetRequest { deal_id: deal_id.clone() };
 
     let response_4 = match api.position_get(params).await {
@@ -543,6 +560,7 @@ async fn positions_flow_works() {
     //
     // Update the position.
     //
+    println!("Updating the position...");
     let position_update_request = PositionPutRequest {
         guaranteed_stop: Some(true),
         limit_level: Some(position_level + 100.0),
@@ -575,6 +593,7 @@ async fn positions_flow_works() {
     //
     // Close the position.
     //
+    println!("Closing the position...");
     let position_close_request = PositionDeleteRequest {
         deal_id: Some(deal_id),
         direction: Some(Direction::Sell),
@@ -771,6 +790,206 @@ async fn session_refresh_token_post_works() {
     println!(
         "Response body: {}",
         serde_json::to_string_pretty(&response.1).unwrap()
+    );
+
+    sleep();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// WORKINGORDERS ENDPOINT INTEGRATION TESTS.
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#[tokio::test]
+async fn workingorders_flow_works() {
+    // Get the API instance.
+    let api = get_or_init_rest_api().await;
+
+    //
+    // Create a new working order.
+    //
+    println!("Creating a new working order...");
+    let working_order_request = WorkingOrderPostRequest {
+        currency_code: "EUR".to_string(),
+        deal_reference: None,
+        direction: Direction::Buy,
+        epic: "IX.D.DAX.IFMM.IP".to_string(),
+        expiry: "-".to_string(), // "-" for no expiry.
+        force_open: Some(true),
+        good_till_date: None,
+        guaranteed_stop: false,
+        level: 10000.0,
+        limit_distance: None,
+        limit_level: None,
+        size: 1.0,
+        stop_distance: None,
+        stop_level: None,
+        time_in_force: WorkingOrderTimeInForce::GoodTillCancelled,
+        r#type: WorkingOrderType::Limit,
+    };
+
+    let response_1 = match api.workingorders_post(&working_order_request).await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error creating a new working order: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response_1.0).unwrap()
+    );
+
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response_1.1).unwrap()
+    );
+
+    let deal_reference = response_1.1.deal_reference.clone();
+
+    sleep();
+
+    //
+    // Get the trade confirmation for the new position.
+    //
+    println!("Getting trade confirmation for the new working order...");
+    let response_2 = match api.confirms_get(ConfirmsGetRequest {
+        deal_reference: deal_reference.clone(),
+    }).await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error getting trade confirmation for the new working order: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response_2.0).unwrap()
+    );
+
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response_2.1).unwrap()
+    );
+
+    let deal_id = response_2.1.deal_id.clone();
+    let working_order_level;
+    if let Some(level) = response_2.1.level {
+        working_order_level = level;
+    } else {
+        working_order_level = 18500.0;
+    }
+    println!("Working order level: {}", working_order_level);
+
+    sleep();
+
+    //
+    // Get the list of working orders.
+    //
+    println!("Getting list of working orders...");
+    let response_3 = match api.workingorders_get().await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error getting list of working orders: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response_3.0).unwrap()
+    );
+
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response_3.1).unwrap()
+    );
+
+    sleep();
+
+    //
+    // Update the working order.
+    //
+    println!("Updating the new working order...");
+    let working_order_update_request = WorkingOrderPutRequest {
+        good_till_date: None,
+        guaranteed_stop: None,
+        level: working_order_level + 100.0,
+        limit_distance: None,
+        limit_level: None,
+        stop_distance: None,
+        stop_level: None,
+        time_in_force: WorkingOrderTimeInForce::GoodTillCancelled,
+        r#type: WorkingOrderType::Limit,
+    };
+
+    let response_4 = match api.workingorders_put(&working_order_update_request, deal_id.clone()).await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error updating the new working order: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response_4.0).unwrap()
+    );
+
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response_4.1).unwrap()
+    );
+
+    sleep();
+
+    //
+    // Get the list of working orders.
+    //
+    println!("Getting list of working orders...");
+    let response_5 = match api.workingorders_get().await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error getting list of working orders: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response_5.0).unwrap()
+    );
+
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response_5.1).unwrap()
+    );
+
+    sleep();
+
+    //
+    // Delete the working order.
+    //
+    println!("Deleting the new working order...");
+    let response_6 = match api.workingorders_delete(deal_id.clone()).await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error deleting the new working order: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response_6.0).unwrap()
+    );
+
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response_6.1).unwrap()
     );
 
     sleep();

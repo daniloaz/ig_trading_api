@@ -1,7 +1,6 @@
 use crate::common::*;
 use crate::rest_regex::*;
 use chrono::{NaiveDateTime, Utc};
-use serde::de;
 use serde::de::DeserializeOwned;
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize, Serializer};
@@ -111,91 +110,7 @@ pub struct Sentiment {
 
 
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct WorkingOrders {
-    pub working_orders: Vec<WorkingOrder>,
-}
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct WorkingOrder {
-    market_data: MarketData,
-    working_order_data: WorkingOrderData,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct WorkingOrderData {
-    pub created_date: String,
-    #[serde(rename = "createdDateUTC")]
-    pub created_date_utc: String,
-    pub currency_code: String,
-    pub deal_id: String,
-    pub direction: Direction,
-    pub dma: bool,
-    pub epic: String,
-    pub good_till_date: String,
-    #[serde(rename = "goodTillDateISO")]
-    pub good_till_date_iso: String,
-    pub guaranteed_stop: bool,
-    pub limit_distance: f64,
-    pub limited_risk_premium: f64,
-    pub order_level: f64,
-    pub order_size: f64,
-    pub order_type: WorkingOrderType,
-    pub stop_distance: f64,
-    pub time_in_force: WorkingOrderTimeInForce,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum WorkingOrderType {
-    Limit,
-    Stop,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum WorkingOrderTimeInForce {
-    GoodTillCancelled,
-    GoodTillDate,
-}
-
-#[derive(Debug, Default, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CreateWorkingOrder {
-    pub currency_code: Option<String>,
-    pub deal_reference: Option<String>,
-    pub direction: Option<Direction>,
-    pub epic: Option<String>,
-    pub expiry: Option<String>,
-    pub force_open: Option<bool>,
-    pub good_till_date: Option<String>,
-    pub guaranteed_stop: Option<bool>,
-    pub level: Option<f64>,
-    pub limit_distance: Option<f64>,
-    pub limit_level: Option<f64>,
-    pub size: Option<f64>,
-    pub stop_distance: Option<f64>,
-    pub stop_level: Option<f64>,
-    pub time_in_force: Option<WorkingOrderTimeInForce>,
-    pub r#type: Option<WorkingOrderType>,
-}
-
-#[derive(Debug, Default, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct UpdateWorkingOrder {
-    pub good_till_date: Option<String>,
-    pub guaranteed_stop: Option<bool>,
-    pub level: Option<f64>,
-    pub limit_distance: Option<f64>,
-    pub limit_level: Option<f64>,
-    pub stop_distance: Option<f64>,
-    pub stop_level: Option<f64>,
-    pub time_in_force: Option<WorkingOrderTimeInForce>,
-    pub r#type: Option<WorkingOrderType>,
-}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -2261,3 +2176,352 @@ pub struct SessionRefreshTokenPostResponse {
 
 /// Validate the session encryption key response.
 impl ValidateResponse for SessionRefreshTokenPostResponse {}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// WORKINGORDERS ENDPOINT MODELS.
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/// Specific working order.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkingOrder {
+    market_data: MarketData,
+    working_order_data: WorkingOrderData,
+}
+
+/// Working order data.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkingOrderData {
+    /// Local date and time when the order was created. Format is yyyy/MM/dd kk:mm:ss:SSS.
+    pub created_date: String,
+    /// Date and time when the order was created.
+    #[serde(rename = "createdDateUTC")]
+    pub created_date_utc: String,
+    /// Currency ISO code.
+    pub currency_code: String,
+    /// Deal identifier.
+    pub deal_id: String,
+    /// Deal direction.
+    pub direction: Direction,
+    /// True if this is a DMA (Direct Market Access) working order.
+    pub dma: Option<bool>,
+    /// Instrument epic identifier.
+    pub epic: Option<String>,
+    /// The date and time the working order will be deleted if not triggered till then. Date format is yyyy/MM/dd hh:mm.
+    pub good_till_date: Option<String>,
+    #[serde(rename = "goodTillDateISO")]
+    /// The date and time the working order will be deleted if not triggered till then.
+    pub good_till_date_iso: Option<String>,
+    /// True if controlled risk.
+    pub guaranteed_stop: bool,
+    /// Limit distance.
+    pub limit_distance: Option<f64>,
+    /// Limited risk premium.
+    pub limited_risk_premium: Option<f64>,
+    /// Price at which to execute the trade.
+    pub order_level: Option<f64>,
+    /// Order size.
+    pub order_size: Option<f64>,
+    /// Working order type.
+    pub order_type: WorkingOrderType,
+    /// Stop distance.
+    pub stop_distance: Option<f64>,
+    /// Describes the type of time in force for a given order
+    pub time_in_force: WorkingOrderTimeInForce,
+}
+
+/// Request to delete a working order by sending a DELETE request to the /workingorders/otc/{dealId} endpoint.
+#[derive(Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkingOrderDeleteRequest {
+    /// Deal identifier.
+    pub deal_id: String,
+}
+
+impl ValidateRequest for WorkingOrderDeleteRequest {
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        if !DEAL_ID_REGEX.is_match(&self.deal_id) {
+            return Err(Box::new(ApiError {
+                message: "Deal ID field is invalid.".to_string(),
+            }));
+        }
+
+        Ok(())
+    }
+}
+
+/// Response to working order deletion request through the DELETE /workingorders/otc/{dealId} endpoint.
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkingOrderDeleteResponse {
+    /// Deal reference of the transaction.
+    pub deal_reference: String,
+}
+
+impl ValidateResponse for WorkingOrderDeleteResponse {
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        if !DEAL_REFERENCE_REGEX.is_match(&self.deal_reference) {
+            return Err(Box::new(ApiError {
+                message: "Deal reference field is invalid.".to_string(),
+            }));
+        }
+
+        Ok(())
+    }
+}
+
+/// Request to create a new working order by sending a POST request to the /workingorders/otc endpoint.
+#[derive(Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkingOrderPostRequest {
+    /// Currency. Restricted to available instrument currencies.
+    pub currency_code: String,
+    /// A user-defined reference identifying the submission of the order.
+    pub deal_reference: Option<String>,
+    /// Deal direction.
+    pub direction: Direction,
+    /// Instrument epic.
+    pub epic: String,
+    /// Expiry.
+    pub expiry: String,
+    /// Force open.
+    pub force_open: Option<bool>,
+    /// Good till date - This accepts two possible formats either yyyy/mm/dd hh:mm:ss in UTC Time
+    /// or Unix Timestamp in milliseconds.
+    pub good_till_date: Option<String>,
+    /// Guaranteed stop.
+    pub guaranteed_stop: bool,
+    /// Deal level.
+    pub level: f64,
+    /// Limit distance.
+    pub limit_distance: Option<f64>,
+    /// Limit level.
+    pub limit_level: Option<f64>,
+    /// Order size.
+    pub size: f64,
+    /// Stop distance.
+    pub stop_distance: Option<f64>,
+    /// Stop level.
+    pub stop_level: Option<f64>,
+    /// Time in force.
+    pub time_in_force: WorkingOrderTimeInForce,
+    /// Working order type.
+    pub r#type: WorkingOrderType,
+}
+
+impl ValidateRequest for WorkingOrderPostRequest {
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        // Constraint: field currency_code follows pattern(regexp="[A-Z]{3}").
+        if !CURRENCY_CODE_REGEX.is_match(&self.currency_code) {
+            return Err(Box::new(ApiError {
+                message: "Currency code field is invalid.".to_string(),
+            }));
+        }
+
+        // Constraint: field deal_reference follows pattern(regexp="[A-Za-z0-9_\\-]{1,30}")].
+        if let Some(deal_reference) = &self.deal_reference {
+            if !DEAL_REFERENCE_REGEX.is_match(deal_reference) {
+                return Err(Box::new(ApiError {
+                    message: "Deal reference field is invalid.".to_string(),
+                }));
+            }
+        }
+
+        // Constraint: field epic follows pattern(regexp="[A-Za-z0-9._]{6,30}").
+        if !EPIC_REGEX.is_match(&self.epic) {
+            return Err(Box::new(ApiError {
+                message: "Epic field is invalid.".to_string(),
+            }));
+        }
+
+        // Constraint: field expiry follows pattern(regexp="(\\d{2}-)?[A-Z]{3}-\\d{2}|-|DFB").
+        if !EXPIRY_REGEX.is_match(&self.expiry) {
+            return Err(Box::new(ApiError {
+                message: "Expiry field is invalid.".to_string(),
+            }));
+        }
+
+        // Constraint: check precision of size is not more than 12 decimal places.
+        let size_str = format!("{}", self.size);
+        let parts: Vec<&str> = size_str.split('.').collect();
+        if parts.len() == 2 && parts[1].len() > 12 {
+            return Err(Box::new(ApiError {
+                message: "Size field has more thatn 12 decimal places.".to_string(),
+            }));
+        }
+
+        // Constraint: if guaranteed_stop equals true, then set stop_distance.
+        if self.guaranteed_stop == true && self.stop_distance.is_none() {
+            return Err(Box::new(ApiError {
+                message: "stop_distance field is required when guaranteed_stop is true.".to_string(),
+            }));
+        }
+
+        // Constraint: If time_in_force equals GOOD_TILL_DATE, then set good_till_date field.
+        match &self.time_in_force {
+            WorkingOrderTimeInForce::GoodTillDate => {
+                if self.good_till_date.is_none() {
+                    return Err(Box::new(ApiError {
+                        message: "good_till_date field is required when time_in_force is GOOD_TILL_DATE.".to_string(),
+                    }));
+                }
+            }
+            _ => {}
+        }
+
+        // Constraint: set only one of {limit_level, limit_distance}.
+        if self.limit_level.is_some() && self.limit_distance.is_some() {
+            return Err(Box::new(ApiError {
+                message: "Set only one of {limit_level, limit_distance}.".to_string(),
+            }));
+        }
+
+        // Constraint: set only one of {stop_level,stop_distance}.
+        if self.stop_level.is_some() && self.stop_distance.is_some() {
+            return Err(Box::new(ApiError {
+                message: "Set only one of {stop_level, stop_distance}.".to_string(),
+            }));
+        }
+
+        Ok(())
+    }
+}
+
+/// Response to working order creation request through the POST /workingorders/otc endpoint.
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkingOrderPostResponse {
+    /// Deal reference of the transaction.
+    pub deal_reference: String,
+}
+
+impl ValidateResponse for WorkingOrderPostResponse {
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        if !DEAL_REFERENCE_REGEX.is_match(&self.deal_reference) {
+            return Err(Box::new(ApiError {
+                message: "Deal reference field is invalid.".to_string(),
+            }));
+        }
+
+        Ok(())
+    }
+}
+
+/// Request to update a working order by sending a PUT request to the /workingorders/otc/{dealId} endpoint.
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkingOrderPutRequest {
+    /// Good till date - This accepts two possible formats either yyyy/mm/dd hh:mm:ss
+    /// in UTC Time or Unix Timestamp in milliseconds.
+    pub good_till_date: Option<String>,
+    /// True if a guaranteed stop is required.
+    pub guaranteed_stop: Option<bool>,
+    /// Deal level.
+    pub level: f64,
+    /// Limit distance.
+    pub limit_distance: Option<f64>,
+    /// Limit level.
+    pub limit_level: Option<f64>,
+    /// Stop distance.
+    pub stop_distance: Option<f64>,
+    /// Stop level.
+    pub stop_level: Option<f64>,
+    /// Time in force.
+    pub time_in_force: WorkingOrderTimeInForce,
+    /// Working order type.
+    pub r#type: WorkingOrderType,
+}
+
+impl ValidateRequest for WorkingOrderPutRequest {
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        // Constraint: if guaranteed_stop equals true, then set stop_level.
+        if self.guaranteed_stop == Some(true) && self.stop_level.is_none() {
+            return Err(Box::new(ApiError {
+                message: "stop_level must be set when guaranteed_stop is true.".to_string(),
+            }));
+        }
+
+        // Constraint: if time_in_force equals GOOD_TILL_DATE, then set good_till_date field.
+        match &self.time_in_force {
+            WorkingOrderTimeInForce::GoodTillDate => {
+                if self.good_till_date.is_none() {
+                    return Err(Box::new(ApiError {
+                        message: "good_till_date field is required when time_in_force is GOOD_TILL_DATE.".to_string(),
+                    }));
+                }
+            }
+            _ => {}
+        }
+
+        // Constraint: set only one of {limit_level, limit_distance}.
+        if self.limit_level.is_some() && self.limit_distance.is_some() {
+            return Err(Box::new(ApiError {
+                message: "Set only one of {limit_level, limit_distance}.".to_string(),
+            }));
+        }
+
+        // Constraint: set only one of {stop_level, stop_distance}.
+        if self.stop_level.is_some() && self.stop_distance.is_some() {
+            return Err(Box::new(ApiError {
+                message: "Set only one of {stop_level, stop_distance}.".to_string(),
+            }));
+        }
+
+        Ok(())
+    }
+}
+
+/// Response to working order update request through the PUT /workingorders/otc/{dealId} endpoint.
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkingOrderPutResponse {
+    /// Deal reference of the transaction.
+    pub deal_reference: String,
+}
+
+impl ValidateResponse for WorkingOrderPutResponse {
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        if !DEAL_REFERENCE_REGEX.is_match(&self.deal_reference) {
+            return Err(Box::new(ApiError {
+                message: "Deal reference field is invalid.".to_string(),
+            }));
+        }
+
+        Ok(())
+    }
+}
+
+/// Response to the GET /workingorders request, which returns a list of working orders for the active account.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkingOrdersGetResponse {
+    /// List of working orders.
+    pub working_orders: Vec<WorkingOrder>,
+}
+
+impl ValidateResponse for WorkingOrdersGetResponse {}
+
+/// Working order type.
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum WorkingOrderType {
+    /// Limit working order.
+    Limit,
+    #[default]
+    /// Stop working order.
+    Stop,
+}
+
+/// Describes the type of time in force for a given order.
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum WorkingOrderTimeInForce {
+    #[default]
+    /// Good until cancelled.
+    GoodTillCancelled,
+    /// Good until specified date.
+    GoodTillDate,
+}
