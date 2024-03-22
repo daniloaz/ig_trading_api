@@ -434,7 +434,35 @@ async fn marketnavigation_get_works() {
     // Get the API instance.
     let api = get_or_init_rest_api().await;
 
-    let response = match api.marketnavigation_get().await {
+    // Test without parameters.
+    let response_1 = match api.marketnavigation_get(None).await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error getting markets: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    let nodes_1 = response_1.1.nodes.as_ref().unwrap();
+    assert!(!nodes_1.is_empty());
+
+    let node_id = response_1.1.nodes.as_ref().unwrap().get(0).unwrap().id.clone();
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response_1.0).unwrap()
+    );
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response_1.1).unwrap()
+    );
+
+    println!("Node ID: {}", node_id);
+
+    sleep();
+
+    // Test with node_id parameter.
+    let response_2 = match api.marketnavigation_get(Some(node_id)).await {
         Ok(response) => response,
         Err(e) => {
             println!("Error getting markets: {:?}", e);
@@ -444,12 +472,15 @@ async fn marketnavigation_get_works() {
 
     println!(
         "Response headers: {}",
-        serde_json::to_string_pretty(&response.0).unwrap()
+        serde_json::to_string_pretty(&response_2.0).unwrap()
     );
     println!(
         "Response body: {}",
-        serde_json::to_string_pretty(&response.1).unwrap()
+        serde_json::to_string_pretty(&response_2.1).unwrap()
     );
+
+    let nodes_2 = response_2.1.nodes.as_ref().unwrap();
+    assert!(!nodes_2.is_empty());
 
     sleep();
 }

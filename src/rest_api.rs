@@ -167,14 +167,21 @@ impl RestApi {
     //
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    /// Returns all top-level nodes (market categories) in the market navigation hierarchy.
+    /// Returns all top-level nodes (market categories) in the market navigation hierarchy if no
+    /// node is specified. Returns the specified node's children if a node is specified.
     pub async fn marketnavigation_get(
         &self,
+        node_id: Option<String>,
     ) -> Result<(Value, MarketNavigationGetResponse), Box<dyn Error>> {
+        let url = match node_id {
+            Some(node_id) => format!("marketnavigation/{}", node_id),
+            None => "marketnavigation".to_string(),
+        };
+
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
-            .get("marketnavigation".to_string(), Some(1), &None::<Empty>)
+            .get(url, Some(1), &None::<Empty>)
             .await?;
 
         // Convert header_map to json.

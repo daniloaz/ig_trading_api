@@ -1178,6 +1178,15 @@ pub enum TransactionType {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct MarketNavigationGetRequest {
+    /// The identifier of the node to browse.
+    node_id: Option<String>,
+}
+
+impl ValidateRequest for MarketNavigationGetRequest {}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MarketNavigationGetResponse {
     /// Market data.
     pub markets: Option<Vec<MarketData>>,
