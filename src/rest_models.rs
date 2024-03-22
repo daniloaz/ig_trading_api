@@ -106,12 +106,6 @@ pub struct Sentiment {
     pub short_position_percentage: f64,
 }
 
-
-
-
-
-
-
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Application {
@@ -1611,16 +1605,22 @@ impl ValidateRequest for PositionDeleteRequest {
         }
 
         // Constraint: if order_type equals MARKET, then DO NOT set level, quote_id.
-        if self.order_type == Some(OrderType::Market) && (self.level.is_some() || self.quote_id.is_some()) {
+        if self.order_type == Some(OrderType::Market)
+            && (self.level.is_some() || self.quote_id.is_some())
+        {
             return Err(Box::new(ApiError {
-                message: "Level and quote ID fields cannot be set when order type is MARKET.".to_string(),
+                message: "Level and quote ID fields cannot be set when order type is MARKET."
+                    .to_string(),
             }));
         }
 
         // Constraint: if order_type equals QUOTE, then set level, quoteId.
-        if self.order_type == Some(OrderType::Quote) && (self.level.is_none() || self.quote_id.is_none()) {
+        if self.order_type == Some(OrderType::Quote)
+            && (self.level.is_none() || self.quote_id.is_none())
+        {
             return Err(Box::new(ApiError {
-                message: "Level and quote ID fields are required when order type is QUOTE.".to_string(),
+                message: "Level and quote ID fields are required when order type is QUOTE."
+                    .to_string(),
             }));
         }
 
@@ -1762,7 +1762,8 @@ impl ValidateRequest for PositionPostRequest {
         }
 
         // Constraint: if guaranteed_stop equals true, then set only one of stop_level, stop_distance.
-        if self.guaranteed_stop == true && self.stop_level.is_some() && self.stop_distance.is_some() {
+        if self.guaranteed_stop == true && self.stop_level.is_some() && self.stop_distance.is_some()
+        {
             return Err(Box::new(ApiError {
                 message: "Only one of stop_level or stop_distance can be set when guaranteed_stop is true.".to_string(),
             }));
@@ -1783,23 +1784,28 @@ impl ValidateRequest for PositionPostRequest {
         }
 
         // Constraint: if order_type equals MARKET, then DO NOT set level, quote_id.
-        if self.order_type == OrderType::Market && (self.level.is_some() || self.quote_id.is_some()) {
+        if self.order_type == OrderType::Market && (self.level.is_some() || self.quote_id.is_some())
+        {
             return Err(Box::new(ApiError {
-                message: "Neither level nor quote_id can be set when order_type is MARKET.".to_string(),
+                message: "Neither level nor quote_id can be set when order_type is MARKET."
+                    .to_string(),
             }));
         }
 
         // Constraint: if order_type equals QUOTE, then set level, quote_id.
-        if self.order_type == OrderType::Quote && (self.level.is_none() || self.quote_id.is_none()) {
+        if self.order_type == OrderType::Quote && (self.level.is_none() || self.quote_id.is_none())
+        {
             return Err(Box::new(ApiError {
-                message: "Both level and quote_id must be set when order_type is QUOTE.".to_string(),
+                message: "Both level and quote_id must be set when order_type is QUOTE."
+                    .to_string(),
             }));
         }
 
         // Constraint: if trailing_stop equals false, then DO NOT set trailing_stop_increment.
         if self.trailing_stop == Some(false) && self.trailing_stop_increment.is_some() {
             return Err(Box::new(ApiError {
-                message: "trailing_stop_increment cannot be set when trailing_stop is false.".to_string(),
+                message: "trailing_stop_increment cannot be set when trailing_stop is false."
+                    .to_string(),
             }));
         }
 
@@ -1818,7 +1824,9 @@ impl ValidateRequest for PositionPostRequest {
         }
 
         // Constraint: if trailing_stop equals true, then set stop_distance, trailing_stop_increment.
-        if self.trailing_stop == Some(true) && (self.stop_distance.is_none() || self.trailing_stop_increment.is_none()) {
+        if self.trailing_stop == Some(true)
+            && (self.stop_distance.is_none() || self.trailing_stop_increment.is_none())
+        {
             return Err(Box::new(ApiError {
                 message: "Both stop_distance and trailing_stop_increment must be set when trailing_stop is true.".to_string(),
             }));
@@ -1927,7 +1935,9 @@ impl ValidateRequest for PositionPutRequest {
         }
 
         // Constraint: if trailing_stop equals false, then DO NOT set trailing_stop_distance, trailing_stop_increment.
-        if self.trailing_stop == Some(false) && (self.trailing_stop_distance.is_some() || self.trailing_stop_increment.is_some()) {
+        if self.trailing_stop == Some(false)
+            && (self.trailing_stop_distance.is_some() || self.trailing_stop_increment.is_some())
+        {
             return Err(Box::new(ApiError {
                 message: "Neither trailing_stop_distance nor trailing_stop_increment can be set when trailing_stop is false.".to_string(),
             }));
@@ -1941,7 +1951,11 @@ impl ValidateRequest for PositionPutRequest {
         }
 
         // Constraint: if trailing_stop equals true, then set trailing_stop_distance, trailing_stop_increment, stop_level.
-        if self.trailing_stop == Some(true) && (self.trailing_stop_distance.is_none() || self.trailing_stop_increment.is_none() || self.stop_level.is_none()) {
+        if self.trailing_stop == Some(true)
+            && (self.trailing_stop_distance.is_none()
+                || self.trailing_stop_increment.is_none()
+                || self.stop_level.is_none())
+        {
             return Err(Box::new(ApiError {
                 message: "All of trailing_stop_distance, trailing_stop_increment, stop_level must be set when trailing_stop is true.".to_string(),
             }));
@@ -1949,7 +1963,6 @@ impl ValidateRequest for PositionPutRequest {
 
         Ok(())
     }
-
 }
 
 /// Response to position update request (PUT /positions/otc/{deal_id}).
@@ -2076,7 +2089,10 @@ impl ValidateResponse for SprintMarketPositionsGetResponse {
             // Constraint: field currency follows pattern(regexp="[A-Z]{3}").
             if !CURRENCY_CODE_REGEX.is_match(&sprint_market_position.currency) {
                 return Err(Box::new(ApiError {
-                    message: format!("Currency code '{}' field is invalid.", sprint_market_position.currency),
+                    message: format!(
+                        "Currency code '{}' field is invalid.",
+                        sprint_market_position.currency
+                    ),
                 }));
             }
         }
@@ -2299,21 +2315,21 @@ pub struct SessionRefreshTokenPostRequest {
 
 /// Validate the session refresh token request.
 impl ValidateRequest for SessionRefreshTokenPostRequest {
-	fn validate(&self) -> Result<(), Box<dyn Error>> {
-		if self.refresh_token.is_empty() {
-			return Err(Box::new(ApiError {
-				message: "Refresh token field is empty.".to_string(),
-			}));
-		}
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        if self.refresh_token.is_empty() {
+            return Err(Box::new(ApiError {
+                message: "Refresh token field is empty.".to_string(),
+            }));
+        }
 
-		Ok(())
-	}
+        Ok(())
+    }
 }
 
 /// Access token response. Response to the POST /session/refresh-token request.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct SessionRefreshTokenPostResponse {
-	/// Access token.
+    /// Access token.
     pub access_token: String,
     /// Access token expiry in seconds.
     pub expires_in: String,
@@ -2507,7 +2523,8 @@ impl ValidateRequest for WorkingOrderPostRequest {
         // Constraint: if guaranteed_stop equals true, then set stop_distance.
         if self.guaranteed_stop == true && self.stop_distance.is_none() {
             return Err(Box::new(ApiError {
-                message: "stop_distance field is required when guaranteed_stop is true.".to_string(),
+                message: "stop_distance field is required when guaranteed_stop is true."
+                    .to_string(),
             }));
         }
 
@@ -2516,7 +2533,9 @@ impl ValidateRequest for WorkingOrderPostRequest {
             WorkingOrderTimeInForce::GoodTillDate => {
                 if self.good_till_date.is_none() {
                     return Err(Box::new(ApiError {
-                        message: "good_till_date field is required when time_in_force is GOOD_TILL_DATE.".to_string(),
+                        message:
+                            "good_till_date field is required when time_in_force is GOOD_TILL_DATE."
+                                .to_string(),
                     }));
                 }
             }
@@ -2600,7 +2619,9 @@ impl ValidateRequest for WorkingOrderPutRequest {
             WorkingOrderTimeInForce::GoodTillDate => {
                 if self.good_till_date.is_none() {
                     return Err(Box::new(ApiError {
-                        message: "good_till_date field is required when time_in_force is GOOD_TILL_DATE.".to_string(),
+                        message:
+                            "good_till_date field is required when time_in_force is GOOD_TILL_DATE."
+                                .to_string(),
                     }));
                 }
             }

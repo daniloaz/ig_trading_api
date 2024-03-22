@@ -31,9 +31,7 @@ impl RestApi {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// Returns a list of the logged-in client's accounts.
-    pub async fn accounts_get(
-        &self,
-    ) -> Result<(Value, AccountsGetResponse), Box<dyn Error>> {
+    pub async fn accounts_get(&self) -> Result<(Value, AccountsGetResponse), Box<dyn Error>> {
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
@@ -100,14 +98,10 @@ impl RestApi {
         &self,
         params: ConfirmsGetRequest,
     ) -> Result<(Value, ConfirmsGetResponse), Box<dyn Error>> {
-
         let url = format!("confirms/{}", params.deal_reference);
 
         // Send the request to the REST client.
-        let (header_map, response_value) = self
-            .client
-            .get(url, Some(1), &None::<Empty>)
-            .await?;
+        let (header_map, response_value) = self.client.get(url, Some(1), &None::<Empty>).await?;
 
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
@@ -179,10 +173,7 @@ impl RestApi {
         };
 
         // Send the request to the REST client.
-        let (header_map, response_value) = self
-            .client
-            .get(url, Some(1), &None::<Empty>)
-            .await?;
+        let (header_map, response_value) = self.client.get(url, Some(1), &None::<Empty>).await?;
 
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
@@ -203,7 +194,6 @@ impl RestApi {
         &self,
         body: PositionDeleteRequest,
     ) -> Result<(Value, PositionDeleteResponse), Box<dyn Error>> {
-
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
@@ -223,15 +213,11 @@ impl RestApi {
         &self,
         params: PositionGetRequest,
     ) -> Result<(Value, PositionGetResponse), Box<dyn Error>> {
-
         // Create the url based on the params.
         let url = format!("positions/{}", params.deal_id);
 
         // Send the request to the REST client.
-        let (header_map, response_value) = self
-            .client
-            .get(url, Some(2), &None::<Empty>)
-            .await?;
+        let (header_map, response_value) = self.client.get(url, Some(2), &None::<Empty>).await?;
 
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
@@ -246,7 +232,6 @@ impl RestApi {
         &self,
         body: PositionPostRequest,
     ) -> Result<(Value, PositionPostResponse), Box<dyn Error>> {
-
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
@@ -267,14 +252,10 @@ impl RestApi {
         body: PositionPutRequest,
         deal_id: String,
     ) -> Result<(Value, PositionPutResponse), Box<dyn Error>> {
-
         let url = format!("positions/otc/{}", deal_id);
 
         // Send the request to the REST client.
-        let (header_map, response_value) = self
-            .client
-            .put(url, Some(2), &body)
-            .await?;
+        let (header_map, response_value) = self.client.put(url, Some(2), &body).await?;
 
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
@@ -285,10 +266,7 @@ impl RestApi {
     }
 
     /// Returns all open positions for the active account.
-    pub async fn positions_get(
-        &self,
-    ) -> Result<(Value, PositionsGetResponse), Box<dyn Error>> {
-
+    pub async fn positions_get(&self) -> Result<(Value, PositionsGetResponse), Box<dyn Error>> {
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
@@ -313,11 +291,14 @@ impl RestApi {
     pub async fn positions_sprintmarkets_get(
         &self,
     ) -> Result<(Value, SprintMarketPositionsGetResponse), Box<dyn Error>> {
-
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
-            .get("positions/sprintmarkets".to_string(), Some(2), &None::<Empty>)
+            .get(
+                "positions/sprintmarkets".to_string(),
+                Some(2),
+                &None::<Empty>,
+            )
             .await?;
 
         // Convert header_map to json.
@@ -333,7 +314,6 @@ impl RestApi {
         &self,
         body: SprintMarketPositionsPostRequest,
     ) -> Result<(Value, SprintMarketPositionsPostResponse), Box<dyn Error>> {
-
         // Send the request to the REST client.
         let (header_map, response_value) = self
             .client
@@ -343,7 +323,8 @@ impl RestApi {
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
         // Convert the serde_json::Value response to Session model.
-        let position_post_response = SprintMarketPositionsPostResponse::from_value(&response_value)?;
+        let position_post_response =
+            SprintMarketPositionsPostResponse::from_value(&response_value)?;
 
         Ok((headers, position_post_response))
     }
@@ -357,14 +338,17 @@ impl RestApi {
     /// Log out of the IG API by deleting the current session.
     pub async fn session_delete(&self) -> Result<(Value, ()), Box<dyn Error>> {
         // Send the request to the REST client.
-        let (header_map, _) = self.client.delete("session".to_string(), Some(1), &None::<Empty>).await?;
+        let (header_map, _) = self
+            .client
+            .delete("session".to_string(), Some(1), &None::<Empty>)
+            .await?;
 
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
 
         Ok((headers, ()))
     }
-    
+
     /// Get session details for the current session.
     pub async fn session_get(
         &self,
@@ -447,7 +431,8 @@ impl RestApi {
         // Convert header_map to json.
         let headers: Value = headers_to_json(&headers)?;
         // Deserialize the response_value to SessionRefreshTokenResponse.
-        let session_refresh_token_response = SessionRefreshTokenPostResponse::from_value(&response_value)?;
+        let session_refresh_token_response =
+            SessionRefreshTokenPostResponse::from_value(&response_value)?;
 
         Ok((headers, session_refresh_token_response))
     }
@@ -459,11 +444,10 @@ impl RestApi {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// Deletes a working order for the active account.
-    pub async fn workingorders_delete (
+    pub async fn workingorders_delete(
         &self,
         deal_id: String,
     ) -> Result<(Value, WorkingOrderDeleteResponse), Box<dyn Error>> {
-
         let params = WorkingOrderDeleteRequest {
             deal_id: deal_id.clone(),
         };
@@ -474,10 +458,7 @@ impl RestApi {
         let url = format!("workingorders/otc/{}", params.deal_id);
 
         // Send the request to the REST client.
-        let (header_map, response_value) = self
-            .client
-            .delete(url, Some(2), &None::<Empty>)
-            .await?;
+        let (header_map, response_value) = self.client.delete(url, Some(2), &None::<Empty>).await?;
 
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;
@@ -488,7 +469,7 @@ impl RestApi {
     }
 
     /// Get list of working orders.
-    pub async fn workingorders_get (
+    pub async fn workingorders_get(
         &self,
     ) -> Result<(Value, WorkingOrdersGetResponse), Box<dyn Error>> {
         // Send the request to the REST client.
@@ -506,7 +487,7 @@ impl RestApi {
     }
 
     /// Create a new working order.
-    pub async fn workingorders_post (
+    pub async fn workingorders_post(
         &self,
         body: &WorkingOrderPostRequest,
     ) -> Result<(Value, WorkingOrderPostResponse), Box<dyn Error>> {
@@ -528,7 +509,7 @@ impl RestApi {
     }
 
     /// Update a working order for the active account.
-    pub async fn workingorders_put (
+    pub async fn workingorders_put(
         &self,
         body: &WorkingOrderPutRequest,
         deal_id: String,
@@ -539,10 +520,7 @@ impl RestApi {
         let url = format!("workingorders/otc/{}", deal_id);
 
         // Send the request to the REST client.
-        let (header_map, response_value) = self
-            .client
-            .put(url, Some(2), body)
-            .await?;
+        let (header_map, response_value) = self.client.put(url, Some(2), body).await?;
 
         // Convert header_map to json.
         let headers: Value = headers_to_json(&header_map)?;

@@ -238,7 +238,7 @@ async fn accounts_preferences_put_works() {
             body_2 = AccountsPreferencesPutRequest {
                 trailing_stops_enabled: true,
             };
-        },
+        }
         false => {
             body_1 = AccountsPreferencesPutRequest {
                 trailing_stops_enabled: true,
@@ -246,7 +246,7 @@ async fn accounts_preferences_put_works() {
             body_2 = AccountsPreferencesPutRequest {
                 trailing_stops_enabled: false,
             };
-        },
+        }
     }
 
     let response_2 = match api.accounts_preferences_put(&body_1).await {
@@ -338,11 +338,17 @@ async fn accounts_preferences_put_works() {
     //
     // Verify that the original trailing_stops_enabled field differs from the updated field.
     //
-    assert_eq!(response_1.1.trailing_stops_enabled, !response_3.1.trailing_stops_enabled);
+    assert_eq!(
+        response_1.1.trailing_stops_enabled,
+        !response_3.1.trailing_stops_enabled
+    );
     //
     // Verify that the trailing_stops_enabled field has the same value as the original account preferences.
     //
-    assert_eq!(response_1.1.trailing_stops_enabled, response_5.1.trailing_stops_enabled);
+    assert_eq!(
+        response_1.1.trailing_stops_enabled,
+        response_5.1.trailing_stops_enabled
+    );
 
     sleep();
 }
@@ -450,7 +456,15 @@ async fn marketnavigation_get_works() {
     let nodes_1 = response_1.1.nodes.as_ref().unwrap();
     assert!(!nodes_1.is_empty());
 
-    let node_id = response_1.1.nodes.as_ref().unwrap().get(0).unwrap().id.clone();
+    let node_id = response_1
+        .1
+        .nodes
+        .as_ref()
+        .unwrap()
+        .get(0)
+        .unwrap()
+        .id
+        .clone();
 
     println!(
         "Response headers: {}",
@@ -549,12 +563,18 @@ async fn positions_flow_works() {
     // Get the trade confirmation for the new position.
     //
     println!("Getting trade confirmation for the new position...");
-    let response_2 = match api.confirms_get(ConfirmsGetRequest {
-        deal_reference: deal_reference.clone(),
-    }).await {
+    let response_2 = match api
+        .confirms_get(ConfirmsGetRequest {
+            deal_reference: deal_reference.clone(),
+        })
+        .await
+    {
         Ok(response) => response,
         Err(e) => {
-            println!("Error getting trade confirmation for the new position: {:?}", e);
+            println!(
+                "Error getting trade confirmation for the new position: {:?}",
+                e
+            );
             panic!("Test failed due to error.");
         }
     };
@@ -601,7 +621,9 @@ async fn positions_flow_works() {
     // Get details of the new position.
     //
     println!("Getting details of the position...");
-    let params = PositionGetRequest { deal_id: deal_id.clone() };
+    let params = PositionGetRequest {
+        deal_id: deal_id.clone(),
+    };
 
     let response_4 = match api.position_get(params).await {
         Ok(response) => response,
@@ -636,7 +658,10 @@ async fn positions_flow_works() {
         trailing_stop_increment: None,
     };
 
-    let response_5 = match api.position_put(position_update_request, deal_id.clone()).await {
+    let response_5 = match api
+        .position_put(position_update_request, deal_id.clone())
+        .await
+    {
         Ok(response) => response,
         Err(e) => {
             println!("Error updating the new position: {:?}", e);
@@ -839,15 +864,19 @@ async fn session_refresh_token_post_works() {
     };
 
     println!("Refresh token: {:?}", body.refresh_token);
-    println!("Auth headers: {:?}", api.client.auth_headers.as_ref().unwrap());
+    println!(
+        "Auth headers: {:?}",
+        api.client.auth_headers.as_ref().unwrap()
+    );
 
-    let response: (Value, SessionRefreshTokenPostResponse) = match api.session_refresh_token_post(&body).await {
-        Ok(response) => response,
-        Err(e) => {
-            println!("Error refreshing session token: {:?}", e);
-            panic!("Test failed due to error.");
-        }
-    };
+    let response: (Value, SessionRefreshTokenPostResponse) =
+        match api.session_refresh_token_post(&body).await {
+            Ok(response) => response,
+            Err(e) => {
+                println!("Error refreshing session token: {:?}", e);
+                panic!("Test failed due to error.");
+            }
+        };
 
     println!(
         "Response headers: {}",
@@ -921,12 +950,18 @@ async fn workingorders_flow_works() {
     // Get the trade confirmation for the new position.
     //
     println!("Getting trade confirmation for the new working order...");
-    let response_2 = match api.confirms_get(ConfirmsGetRequest {
-        deal_reference: deal_reference.clone(),
-    }).await {
+    let response_2 = match api
+        .confirms_get(ConfirmsGetRequest {
+            deal_reference: deal_reference.clone(),
+        })
+        .await
+    {
         Ok(response) => response,
         Err(e) => {
-            println!("Error getting trade confirmation for the new working order: {:?}", e);
+            println!(
+                "Error getting trade confirmation for the new working order: {:?}",
+                e
+            );
             panic!("Test failed due to error.");
         }
     };
@@ -992,7 +1027,10 @@ async fn workingorders_flow_works() {
         r#type: WorkingOrderType::Limit,
     };
 
-    let response_4 = match api.workingorders_put(&working_order_update_request, deal_id.clone()).await {
+    let response_4 = match api
+        .workingorders_put(&working_order_update_request, deal_id.clone())
+        .await
+    {
         Ok(response) => response,
         Err(e) => {
             println!("Error updating the new working order: {:?}", e);
