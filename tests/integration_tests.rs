@@ -386,6 +386,8 @@ async fn history_activity_get_works() {
         "Response body: {}",
         serde_json::to_string_pretty(&response.1).unwrap()
     );
+
+    sleep();
 }
 
 #[tokio::test]
@@ -421,6 +423,8 @@ async fn history_transactions_get_works() {
         "Response body: {}",
         serde_json::to_string_pretty(&response.1).unwrap()
     );
+
+    sleep();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
