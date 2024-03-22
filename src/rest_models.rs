@@ -145,162 +145,6 @@ pub struct UpdateApplication {
     pub status: ApplicationStatus,
 }
 
-
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DealingRules {
-    pub market_order_preference: MarketOrderPreference,
-    pub max_stop_or_limit_distance: DealingRule,
-    pub min_controlled_risk_stop_distance: DealingRule,
-    pub min_deal_size: DealingRule,
-    pub min_normal_stop_or_limit_distance: DealingRule,
-    pub min_step_distance: DealingRule,
-    pub trailing_stops_preference: TrailingStopsPreference,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum MarketOrderPreference {
-    AvailableDefaultOff,
-    AvailableDefaultOn,
-    NotAvailable,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DealingRule {
-    pub unit: RuleUnit,
-    pub value: f64,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum RuleUnit {
-    Percentage,
-    Points,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum TrailingStopsPreference {
-    Available,
-    NotAvailable,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct InstrumentDetails {
-    pub chart_code: String,
-    pub contract_size: String,
-    pub controlled_risk_allowed: bool,
-    pub country: Option<String>,
-    pub currencies: Vec<Currency>,
-    pub epic: String,
-    pub expiry: String,
-    pub expiry_details: Option<Expiry>,
-    pub force_open_allowed: bool,
-    pub limited_risk_premium: DealingRule,
-    pub lot_size: f64,
-    pub margin_deposit_bands: Vec<DepositBand>,
-    pub margin_factor: f64,
-    pub margin_factor_unit: RuleUnit,
-    pub market_id: String,
-    pub name: String,
-    pub news_code: String,
-    pub one_pip_means: String,
-    pub opening_hours: Option<OpeningHours>,
-    pub rollover_details: Option<Rollover>,
-    pub slippage_factor: SlippageFactor,
-    pub special_info: Vec<String>,
-    pub sprint_markets_maximum_expiry_time: Option<f64>,
-    pub sprint_markets_minimum_expiry_time: Option<f64>,
-    pub stops_limits_allowed: bool,
-    pub streaming_prices_available: bool,
-    pub r#type: InstrumentType,
-    pub unit: InstrumentUnit,
-    pub value_of_one_pip: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Currency {
-    pub base_exchange_rate: f64,
-    pub code: String,
-    pub exchange_rate: f64,
-    pub is_default: bool,
-    pub symbol: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Expiry {
-    pub last_dealing_date: String,
-    pub settlement_info: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DepositBand {
-    pub currency: String,
-    pub margin: f64,
-    pub max: Option<f64>,
-    pub min: f64,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct OpeningHours {
-    pub market_times: Vec<MarketTime>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Rollover {
-    pub last_rollover_time: String,
-    pub rollover_info: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MarketTime {
-    pub close_time: String,
-    pub open_time: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SlippageFactor {
-    pub unit: String,
-    pub value: f64,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum InstrumentUnit {
-    Amount,
-    Contracts,
-    Shares,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MarketSnapshot {
-    pub bid: f64,
-    pub binary_odds: Option<f64>,
-    pub controlled_risk_extra_spread: f64,
-    pub decimal_places_factor: f64,
-    pub delay_time: f64,
-    pub high: f64,
-    pub low: f64,
-    pub market_status: MarketStatus,
-    pub net_change: f64,
-    pub offer: f64,
-    pub percentage_change: f64,
-    pub scaling_factor: f64,
-    pub update_time: String,
-}
-
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MarketSearch {
@@ -1176,6 +1020,184 @@ pub enum TransactionType {
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/// Currency.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Currency {
+    /// Base exchange rate.
+    pub base_exchange_rate: f64,
+    /// Code, to be used when placing orders.
+    pub code: String,
+    /// Exchange rate.
+    pub exchange_rate: f64,
+    /// True if this is the default currency.
+    pub is_default: bool,
+    /// Symbol, for display purposes.
+    pub symbol: String,
+}
+
+/// Dealing rule.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DealingRule {
+    /// Describes the dimension for a dealing rule value.
+    pub unit: RuleUnit,
+    /// Value.
+    pub value: f64,
+}
+
+/// Dealing rules.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DealingRules {
+    /// Controlled risk spacing.
+    pub controlled_risk_spacing: DealingRule,
+    /// Client's market order trading preference
+    pub market_order_preference: MarketOrderPreference,
+    /// Max stop or limit distance.
+    pub max_stop_or_limit_distance: DealingRule,
+    /// Min controlled risk stop distance.
+    pub min_controlled_risk_stop_distance: DealingRule,
+    /// Min deal size.
+    pub min_deal_size: DealingRule,
+    /// Min normal stop or limit distance.
+    pub min_normal_stop_or_limit_distance: DealingRule,
+    /// Min step distance.
+    pub min_step_distance: DealingRule,
+    /// Trailing stops trading preference for the specified market.
+    pub trailing_stops_preference: TrailingStopsPreference,
+}
+
+/// Deposit band.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DepositBand {
+    /// The currency for this currency band factor calculation.
+    pub currency: String,
+    /// Margin Percentage.
+    pub margin: f64,
+    /// Band maximum.
+    pub max: Option<f64>,
+    /// Band minimum.
+    pub min: f64,
+}
+
+/// Market expiry details.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Expiry {
+    /// Last dealing date.
+    pub last_dealing_date: String,
+    /// Settlement information.
+    pub settlement_info: String,
+}
+
+/// Instrument details.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstrumentDetails {
+    /// Chart code.
+    pub chart_code: String,
+    /// Contract size.
+    pub contract_size: String,
+    /// True if controlled risk trades are allowed.
+    pub controlled_risk_allowed: bool,
+    /// Country.
+    pub country: Option<String>,
+    /// Currencies.
+    pub currencies: Vec<Currency>,
+    /// Instrument identifier.
+    pub epic: String,
+    /// Expiry.
+    pub expiry: String,
+    /// Market expiry details.
+    pub expiry_details: Option<Expiry>,
+    /// True if force open is allowed.
+    pub force_open_allowed: bool,
+    /// The limited risk premium.
+    pub limited_risk_premium: DealingRule,
+    /// Lot size.
+    pub lot_size: f64,
+    /// Margin deposit bands.
+    pub margin_deposit_bands: Vec<DepositBand>,
+    /// Margin requirement factor.
+    pub margin_factor: f64,
+    /// Describes the dimension for a dealing rule value.
+    pub margin_factor_unit: RuleUnit,
+    /// Market identifier.
+    pub market_id: String,
+    /// Market name.
+    pub name: String,
+    /// Reuters news code.
+    pub news_code: String,
+    /// Meaning of one pip.
+    pub one_pip_means: String,
+    /// Market open and close times.
+    pub opening_hours: Option<OpeningHours>,
+    /// Market rollover details.
+    pub rollover_details: Option<Rollover>,
+    /// Slippage factor details for a given market.
+    pub slippage_factor: SlippageFactor,
+    /// List of special information notices.
+    pub special_info: Vec<String>,
+    /// For sprint markets only, the maximum value to be specified
+    /// as the expiry of a sprint markets trade.
+    pub sprint_markets_maximum_expiry_time: Option<f64>,
+    /// For sprint markets only, the minimum value to be specified
+    /// as the expiry of a sprint markets trade.
+    pub sprint_markets_minimum_expiry_time: Option<f64>,
+    /// True if stops and limits are allowed.
+    pub stops_limits_allowed: bool,
+    /// True if streaming prices are available, i.e. the market is
+    /// open and the client has appropriate permissions.
+    pub streaming_prices_available: bool,
+    /// Instrument type.
+    pub r#type: InstrumentType,
+    /// Unit used to qualify the size of a trade.
+    pub unit: InstrumentUnit,
+    /// Value of one pip.
+    pub value_of_one_pip: String,
+}
+
+/// Unit used to qualify the size of a trade.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum InstrumentUnit {
+    /// Amount.
+    Amount,
+    /// Contracts.
+    Contracts,
+    /// Shares.
+    Shares,
+}
+
+/// Market details.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MarketDetails {
+    /// Dealing rules.
+    pub dealing_rules: DealingRules,
+    /// Instrument details.
+    pub instrument: InstrumentDetails,
+    /// Market snapshot data.
+    pub snapshot: MarketSnapshot,
+}
+
+/// Filter for the market details.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum MarketDetailsFilterType {
+    /// Display all market details. Market details includes all instrument data,
+    /// dealing rules and market snapshot values for all epics specified.
+    All,
+    /// Display the market snapshot and minimal instrument data fields.
+    /// This mode is faster because it only sets the epic and instrument type in
+    /// the instrument data and the market data snapshot values with all the other
+    /// fields being unset for each epic specified.
+    SnapshotOnly,
+}
+
+/// Market navigation data.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MarketNavigationGetRequest {
@@ -1185,6 +1207,7 @@ pub struct MarketNavigationGetRequest {
 
 impl ValidateRequest for MarketNavigationGetRequest {}
 
+/// Response to the GET /marketnavigation request.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MarketNavigationGetResponse {
@@ -1196,31 +1219,6 @@ pub struct MarketNavigationGetResponse {
 
 impl ValidateResponse for MarketNavigationGetResponse {}
 
-/*
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MarketData3 {
-    pub bid: f64,
-    pub delay_time: f64,
-    pub epic: String,
-    pub expiry: String,
-    pub high: f64,
-    pub instrument_name: String,
-    pub instrument_type: InstrumentType,
-    pub lot_size: f64,
-    pub low: f64,
-    pub market_status: MarketStatus,
-    pub net_change: f64,
-    pub offer: f64,
-    pub otc_tradeable: bool,
-    pub percentage_change: f64,
-    pub scaling_factor: f64,
-    pub streaming_prices_available: bool,
-    pub update_time: String,
-    pub update_time_utc: String,
-}
-*/
-
 /// Market Hierarchy Node.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -1231,13 +1229,31 @@ pub struct MarketNode {
     pub name: String,
 }
 
+/// Client's market order trading preference.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum MarketOrderPreference {
+    /// Market orders are allowed for the account type and instrument, and the user has
+    /// enabled market orders in their preferences but decided the default state is off.
+    AvailableDefaultOff,
+    /// Market orders are allowed for the account type and instrument, and the user has
+    /// enabled market orders in their preferences and has decided the default state is on.
+    AvailableDefaultOn,
+    /// Market orders are not allowed for the current site and/or instrument.
+    NotAvailable,
+}
+
+/// Request to the GET /markets endpoint.
 #[derive(Debug, Default)]
-pub struct MarketsQuery {
+pub struct MarketsGetRequest {
+    /// The epics of the market to be retrieved, separated by a comma.
     pub epics: Vec<String>,
+    /// Filter for the market details.
     pub filter: Option<MarketDetailsFilterType>,
 }
 
-impl Serialize for MarketsQuery {
+/// Implement the Serialize trait for the MarketsGetRequest struct.
+impl Serialize for MarketsGetRequest {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut state = serializer.serialize_struct("MarketsQuery", 2)?;
 
@@ -1256,27 +1272,135 @@ impl Serialize for MarketsQuery {
     }
 }
 
-#[derive(Debug, Serialize)]
+/// Implement the ValidateRequest trait for the MarketsGetRequest struct.
+impl ValidateRequest for MarketsGetRequest {
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+        // Constraint: Size(min=1).
+        if self.epics.is_empty() {
+            return Err(Box::new(ApiError {
+                message: "The 'epics' field cannot be empty.".to_string(),
+            }));
+        }
+
+        // Constraint: Size(max=50).
+        if self.epics.len() > 50 {
+            return Err(Box::new(ApiError {
+                message: "The 'epics' field cannot be greater than 50.".to_string(),
+            }));
+        }
+
+        // Constraint: Pattern(regexp="^(?>(?:[A-Za-z0-9._]){6,30},?){0,200}$").
+        let serialized_epics = self.epics.join(",");
+        if !EPICS_REGEX.is_match(&serialized_epics) {
+            return Err(Box::new(ApiError {
+                message: "Epic field is invalid.".to_string(),
+            }));
+        }
+
+        Ok(())
+    }
+}
+
+/// Response to the GET /markets request.
+#[derive(Debug, Default, Deserialize, Serialize)]
+pub struct MarketsGetResponse {
+    /// Market details.
+    pub market_details: Vec<MarketDetails>,
+}
+
+impl ValidateResponse for MarketsGetResponse {}
+
+/// Describes the dimension for a dealing rule value.
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum MarketDetailsFilterType {
-    All,
-    SnapshotOnly,
+pub enum RuleUnit {
+    /// Percentage.
+    Percentage,
+    /// Points.
+    Points,
 }
 
-#[derive(Debug, Deserialize)]
+/// Market snapshot data.
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Markets {
-    pub market_details: Vec<Market>,
+pub struct MarketSnapshot {
+    /// Bid price.
+    pub bid: f64,
+    /// Binary odds.
+    pub binary_odds: Option<f64>,
+    /// The number of points to add on each side of the market as an
+    /// additional spread when placing a guaranteed stop trade.
+    pub controlled_risk_extra_spread: f64,
+    /// Number of decimal positions for market levels.
+    pub decimal_places_factor: f64,
+    /// Price delay.
+    pub delay_time: f64,
+    /// Highest price on the day.
+    pub high: f64,
+    /// Lowest price on the day.
+    pub low: f64,
+    /// Describes the current status of a given market.
+    pub market_status: MarketStatus,
+    /// Net price change on the day.
+    pub net_change: f64,
+    /// Offer price.
+    pub offer: f64,
+    /// Percentage price change on the day.
+    pub percentage_change: f64,
+    /// Multiplying factor to determine actual pip value for the
+    /// levels used by the instrument.
+    pub scaling_factor: f64,
+    /// Time of last price update.
+    pub update_time: String,
 }
 
-#[derive(Debug, Deserialize)]
+/// Market time range.
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Market {
-    pub dealing_rules: DealingRules,
-    pub instrument: InstrumentDetails,
-    pub snapshot: MarketSnapshot,
+pub struct MarketTime {
+    /// Close time.
+    pub close_time: String,
+    /// Open time.
+    pub open_time: String,
 }
 
+/// Market open and close times.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OpeningHours {
+    /// Market time ranges.
+    pub market_times: Vec<MarketTime>,
+}
+
+/// Market rollover details.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Rollover {
+    /// Last rollover time.
+    pub last_rollover_time: String,
+    /// Rollover info.
+    pub rollover_info: String,
+}
+
+/// Slippage factor details for a given market.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SlippageFactor {
+    /// Unit.
+    pub unit: String,
+    /// Value.
+    pub value: f64,
+}
+
+/// Trailing stops trading preference for the specified market.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum TrailingStopsPreference {
+    /// Trailing stops are allowed for the current market.
+    Available,
+    /// Trailing stops are not allowed for the current market.
+    NotAvailable,
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
