@@ -425,6 +425,37 @@ async fn history_transactions_get_works() {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+// MARKETS ENDPOINT INTEGRATION TESTS.
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#[tokio::test]
+async fn marketnavigation_get_works() {
+    // Get the API instance.
+    let api = get_or_init_rest_api().await;
+
+    let response = match api.marketnavigation_get().await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error getting markets: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response.0).unwrap()
+    );
+    println!(
+        "Response body: {}",
+        serde_json::to_string_pretty(&response.1).unwrap()
+    );
+
+    sleep();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 // POSITIONS ENDPOINT INTEGRATION TESTS.
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////

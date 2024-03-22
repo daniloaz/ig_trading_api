@@ -145,88 +145,7 @@ pub struct UpdateApplication {
     pub status: ApplicationStatus,
 }
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MarketCategory {
-    pub markets: Option<Vec<MarketData3>>,
-    pub nodes: Option<Vec<MarketNode>>,
-}
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MarketData3 {
-    pub bid: f64,
-    pub delay_time: f64,
-    pub epic: String,
-    pub expiry: String,
-    pub high: f64,
-    pub instrument_name: String,
-    pub instrument_type: InstrumentType,
-    pub lot_size: f64,
-    pub low: f64,
-    pub market_status: MarketStatus,
-    pub net_change: f64,
-    pub offer: f64,
-    pub otc_tradeable: bool,
-    pub percentage_change: f64,
-    pub scaling_factor: f64,
-    pub streaming_prices_available: bool,
-    pub update_time: String,
-    pub update_time_utc: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MarketNode {
-    pub id: String,
-    pub name: String,
-}
-
-#[derive(Debug, Default)]
-pub struct MarketsQuery {
-    pub epics: Vec<String>,
-    pub filter: Option<MarketDetailsFilterType>,
-}
-
-impl Serialize for MarketsQuery {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let mut state = serializer.serialize_struct("MarketsQuery", 2)?;
-
-        state.serialize_field("epics", &self.epics.join(","))?;
-
-        match self.filter.as_ref() {
-            Some(filter) => {
-                state.serialize_field("filter", filter)?;
-            }
-            None => {
-                state.serialize_field("marketIds", &None::<()>)?;
-            }
-        }
-
-        state.end()
-    }
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum MarketDetailsFilterType {
-    All,
-    SnapshotOnly,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Markets {
-    pub market_details: Vec<Market>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Market {
-    pub dealing_rules: DealingRules,
-    pub instrument: InstrumentDetails,
-    pub snapshot: MarketSnapshot,
-}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -1250,6 +1169,105 @@ pub enum TransactionType {
     /// Withdrawal.
     Withdrawal,
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// MARKETS ENDPOINT MODELS.
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MarketNavigationGetResponse {
+    /// Market data.
+    pub markets: Option<Vec<MarketData>>,
+    /// Market Hierarchy Nodes.
+    pub nodes: Option<Vec<MarketNode>>,
+}
+
+impl ValidateResponse for MarketNavigationGetResponse {}
+
+/*
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MarketData3 {
+    pub bid: f64,
+    pub delay_time: f64,
+    pub epic: String,
+    pub expiry: String,
+    pub high: f64,
+    pub instrument_name: String,
+    pub instrument_type: InstrumentType,
+    pub lot_size: f64,
+    pub low: f64,
+    pub market_status: MarketStatus,
+    pub net_change: f64,
+    pub offer: f64,
+    pub otc_tradeable: bool,
+    pub percentage_change: f64,
+    pub scaling_factor: f64,
+    pub streaming_prices_available: bool,
+    pub update_time: String,
+    pub update_time_utc: String,
+}
+*/
+
+/// Market Hierarchy Node.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MarketNode {
+    /// Node identifier.
+    pub id: String,
+    /// Node name.
+    pub name: String,
+}
+
+#[derive(Debug, Default)]
+pub struct MarketsQuery {
+    pub epics: Vec<String>,
+    pub filter: Option<MarketDetailsFilterType>,
+}
+
+impl Serialize for MarketsQuery {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut state = serializer.serialize_struct("MarketsQuery", 2)?;
+
+        state.serialize_field("epics", &self.epics.join(","))?;
+
+        match self.filter.as_ref() {
+            Some(filter) => {
+                state.serialize_field("filter", filter)?;
+            }
+            None => {
+                state.serialize_field("marketIds", &None::<()>)?;
+            }
+        }
+
+        state.end()
+    }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum MarketDetailsFilterType {
+    All,
+    SnapshotOnly,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Markets {
+    pub market_details: Vec<Market>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Market {
+    pub dealing_rules: DealingRules,
+    pub instrument: InstrumentDetails,
+    pub snapshot: MarketSnapshot,
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //

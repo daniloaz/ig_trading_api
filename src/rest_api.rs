@@ -163,6 +163,30 @@ impl RestApi {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     //
+    // MARKETS METHODS.
+    //
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /// Returns all top-level nodes (market categories) in the market navigation hierarchy.
+    pub async fn marketnavigation_get(
+        &self,
+    ) -> Result<(Value, MarketNavigationGetResponse), Box<dyn Error>> {
+        // Send the request to the REST client.
+        let (header_map, response_value) = self
+            .client
+            .get("marketnavigation".to_string(), Some(1), &None::<Empty>)
+            .await?;
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+        // Convert the serde_json::Value response to MarketsGetResponse model.
+        let markets = MarketNavigationGetResponse::from_value(&response_value)?;
+
+        Ok((headers, markets))
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //
     // POSITIONS METHODS.
     //
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
