@@ -74,8 +74,8 @@ fi
 # and avoid rate limiting issues with the API.
 if [[ ${run_integration} -eq 1 ]]; then
     if [[ $verbose -eq 1 ]]; then
-        RUST_TEST_THREADS=1 RUST_TEST_DELAY=${sleep_interval} cargo test --test integration_tests -- --nocapture
+        RUST_TEST_THREADS=1 RUST_TEST_DELAY=${sleep_interval} cargo test --test rest_api_integration_tests -- --nocapture
     else
-        RUST_TEST_THREADS=1 RUST_TEST_DELAY=${sleep_interval} cargo test --test integration_tests
+        RUST_TEST_THREADS=1 RUST_TEST_DELAY=${sleep_interval} cargo test --test rest_api_integration_tests
     fi
 fi
