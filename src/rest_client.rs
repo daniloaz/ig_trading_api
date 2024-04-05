@@ -28,6 +28,8 @@ pub struct RestClient {
     pub common_headers: HeaderMap,
     /// The API configuration.
     pub config: ApiConfig,
+    /// The Lightstreamer endpoint to use for streaming data from the selected execution environment.
+    pub lightstreamer_endpoint: Option<String>,
     /// The refresh token to use for refreshing the session when session_version is 3.
     pub refresh_token: Option<String>,
     /// Session version.
@@ -108,13 +110,14 @@ impl RestClient {
             client: reqwest::Client::new(),
             common_headers,
             config,
+            lightstreamer_endpoint: None,
             refresh_token: None,
             session_version,
         };
 
         // If auto_login is true, then login to the API.
         if auto_login {
-            rest_client.login().await?;
+            let _ = rest_client.login().await?;
         };
 
         Ok(rest_client)
@@ -231,7 +234,15 @@ impl RestClient {
 
                 self.auth_headers = Some(auth_headers);
 
-                Ok(response.json().await?)
+                // Deserialize the response body to a serde_json::Value.
+                let response_json: Value = response.json().await?;
+
+                // Get the lightstreamer endpoint from the login response.
+                if let Some(lightstreamer_endpoint) = response_json.get("lightstreamerEndpoint") {
+                    self.lightstreamer_endpoint = lightstreamer_endpoint.as_str().map(|s| s.to_string());
+                }
+
+                Ok(response_json)
             }
             // If the status code is not 200 OK, return an error.
             _ => Err(Box::new(ApiError {
@@ -293,6 +304,8 @@ impl RestClient {
                 self.auth_headers = Some(auth_headers);
 
                 self.refresh_token = Some(login_response.oauth_token.refresh_token);
+
+                self.lightstreamer_endpoint = Some(login_response.lightstreamer_endpoint.clone());
 
                 Ok(response_body)
             }
