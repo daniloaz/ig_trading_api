@@ -1,6 +1,6 @@
 [package]
 name = "ig_trading_api"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Daniel López Azaña <daniloaz@gmail.com>"]
 description = "A Rust client for the REST and Streaming APIs from IG.com."

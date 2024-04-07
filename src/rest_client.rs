@@ -29,7 +29,7 @@ pub struct RestClient {
     /// The API configuration.
     pub config: ApiConfig,
     /// The Lightstreamer endpoint to use for streaming data from the selected execution environment.
-    pub lightstreamer_endpoint: Option<String>,
+    pub lightstreamer_endpoint: String,
     /// The refresh token to use for refreshing the session when session_version is 3.
     pub refresh_token: Option<String>,
     /// Session version.
@@ -110,7 +110,7 @@ impl RestClient {
             client: reqwest::Client::new(),
             common_headers,
             config,
-            lightstreamer_endpoint: None,
+            lightstreamer_endpoint: "".to_string(),
             refresh_token: None,
             session_version,
         };
@@ -173,8 +173,6 @@ impl RestClient {
 
     /// Log in to the REST API.
     pub async fn login(&mut self) -> Result<Value, Box<dyn Error>> {
-        println!("Logging in with session version: {}", self.session_version);
-
         match self.session_version {
             1 | 2 => Ok(self.login_v2().await?),
             3 => Ok(self.login_v3().await?),
@@ -238,9 +236,21 @@ impl RestClient {
                 let response_json: Value = response.json().await?;
 
                 // Get the lightstreamer endpoint from the login response.
-                if let Some(lightstreamer_endpoint) = response_json.get("lightstreamerEndpoint") {
-                    self.lightstreamer_endpoint = lightstreamer_endpoint.as_str().map(|s| s.to_string());
-                }
+                self.lightstreamer_endpoint = match response_json.get("lightstreamerEndpoint") {
+                    Some(endpoint) => match endpoint.as_str() {
+                        Some(s) => s.to_string(),
+                        None => {
+                            return Err(Box::new(ApiError {
+                                message: "Lightstreamer endpoint is not a string.".to_string(),
+                            }))
+                        }
+                    },
+                    None => {
+                        return Err(Box::new(ApiError {
+                            message: "Lightstreamer endpoint not found in login response.".to_string(),
+                        }))
+                    }
+                };
 
                 Ok(response_json)
             }
@@ -305,7 +315,7 @@ impl RestClient {
 
                 self.refresh_token = Some(login_response.oauth_token.refresh_token);
 
-                self.lightstreamer_endpoint = Some(login_response.lightstreamer_endpoint.clone());
+                self.lightstreamer_endpoint = login_response.lightstreamer_endpoint;
 
                 Ok(response_body)
             }
@@ -422,6 +432,7 @@ mod tests {
             base_url_demo: "https://demo.example.com".to_string(),
             base_url_live: "https://live.example.com".to_string(),
             session_version: Some(2),
+            streaming_api_max_connection_attempts: None,
             password: "test_password".to_string(),
             username: "test_username".to_string(),
         };

@@ -73,6 +73,8 @@ pub struct ApiConfig {
     pub password: String,
     /// The session version to use for login requests.
     pub session_version: Option<usize>,
+    /// The maximum number of connection attempts for the streaming API.
+    pub streaming_api_max_connection_attempts: Option<u64>,
     /// Your username.
     pub username: String,
 }
