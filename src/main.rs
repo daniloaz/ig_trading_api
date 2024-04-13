@@ -1,3 +1,4 @@
+use colored::*;
 use ig_trading_api::streaming_api::StreamingApi;
 use lightstreamer_client::item_update::ItemUpdate;
 use lightstreamer_client::subscription::{Snapshot, Subscription, SubscriptionMode};
@@ -7,12 +8,23 @@ use std::error::Error;
 pub struct MySubscriptionListener {}
 
 impl SubscriptionListener for MySubscriptionListener {
-    fn on_item_update(&mut self, update: ItemUpdate) {
-        println!(
-            "UPDATE {} {}",
-            update.get_value("stock_name").unwrap(),
-            update.get_value("last_price").unwrap()
-        );
+    fn on_item_update(&self, update: &ItemUpdate) {
+        let not_available = "N/A".to_string();
+        let item_name = update.item_name.clone().unwrap_or(not_available.clone());
+        let fields = vec![
+            "BID", "OFFER", "HIGH", "LOW", "MID_OPEN", "CHANGE", "CHANGE_PCT", "MARKET_DELAY", "UPDATE_TIME"
+        ];
+        let mut output = String::new();
+        for field in fields {
+            let value = update.get_value(field).unwrap_or(&not_available).clone();
+            let value_str = if update.changed_fields.contains_key(field) {
+                value.yellow().to_string()
+            } else {
+                value.to_string()
+            };
+            output.push_str(&format!("{}: {}, ", field, value_str));
+        }
+        println!("{}, {}", item_name, output);
     }
 }
 
@@ -26,7 +38,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         SubscriptionMode::Merge,
         // Subscription items, i.e. instruments to subscribe to.
         Some(vec![
-            //"MARKET:IX.D.DAX.IFMM.IP".to_string(), // DAX40 Cash 1€
+            "MARKET:IX.D.DAX.IFMM.IP".to_string(), // DAX40 Cash 1€
             "MARKET:CS.D.BITCOIN.CFD.IP".to_string(), // Bitcoin
         ]),
         // Subscription fields, i.e. data fields to receive updates for.
