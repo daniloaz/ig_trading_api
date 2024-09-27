@@ -79,6 +79,26 @@ pub struct ApiConfig {
     pub username: String,
 }
 
+// Default constructor for ApiConfig
+impl ApiConfig {
+    pub fn new() -> Self {
+        ApiConfig {
+            account_number_demo: "".to_string(),
+            account_number_live: "".to_string(),
+            account_number_test: None,
+            api_key: "".to_string(),
+            auto_login: None,
+            base_url_demo: "".to_string(),
+            base_url_live: "".to_string(),
+            execution_environment: ExecutionEnvironment::Demo,
+            password: "".to_string(),
+            session_version: None,
+            streaming_api_max_connection_attempts: None,
+            username: "".to_string(),
+        }
+    }
+}
+
 /// Load the API configuration from the config value within the configuration file.
 impl Default for ApiConfig {
     fn default() -> Self {
