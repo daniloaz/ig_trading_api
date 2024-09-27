@@ -56,11 +56,11 @@ impl StreamingApi {
         }
     }
 
-    pub async fn new(subscriptions: Vec<Subscription>) -> Result<Self, Box<dyn Error>> {
+    pub async fn new(subscriptions: Vec<Subscription>, config: Option<ApiConfig>) -> Result<Self, Box<dyn Error>> {
         //
-        // Load the configuration from config.yaml file and create a new mutable REST API instance,
+        // Load the configuration from config.yaml file if config is not supplied and create a new mutable REST API instance,
         //
-        let api_config = ApiConfig::default();
+        let api_config = config.unwrap_or_else(|| ApiConfig::default());
         let auto_login = api_config.auto_login.unwrap_or(false);
         let max_connection_attempts = api_config.streaming_api_max_connection_attempts.unwrap_or(MAX_CONNECTION_ATTEMPTS);
         //
