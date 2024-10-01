@@ -58,7 +58,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     my_subscription.set_requested_snapshot(Some(Snapshot::Yes))?;
     my_subscription.add_listener(Box::new(MySubscriptionListener {}));
 
-    let mut streaming_api = StreamingApi::new(vec![my_subscription]).await?;
+    let mut streaming_api = StreamingApi::new(vec![my_subscription], None).await?;
     streaming_api.connect().await;
 
     Ok(())
