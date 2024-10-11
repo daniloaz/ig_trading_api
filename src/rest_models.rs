@@ -305,7 +305,7 @@ pub struct Account {
 }
 
 /// Account status.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AccountStatus {
     /// Disabled account.
@@ -317,7 +317,7 @@ pub enum AccountStatus {
 }
 
 /// Account type.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AccountType {
     /// CFD account.
