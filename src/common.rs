@@ -20,6 +20,13 @@ pub enum ExecutionEnvironment {
     Live,
 }
 
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub enum LogType
+{
+    StdLogs,
+    TracingLogs,
+}
+
 impl<'de> Deserialize<'de> for ExecutionEnvironment {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -77,6 +84,8 @@ pub struct ApiConfig {
     pub streaming_api_max_connection_attempts: Option<u64>,
     /// Your username.
     pub username: String,
+    /// Logging mechanism
+    pub logger: LogType,
 }
 
 // Default constructor for ApiConfig
@@ -95,6 +104,7 @@ impl ApiConfig {
             session_version: None,
             streaming_api_max_connection_attempts: None,
             username: "".to_string(),
+            logger: LogType::StdLogs,
         }
     }
 }

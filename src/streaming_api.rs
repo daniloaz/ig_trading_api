@@ -1,4 +1,4 @@
-use crate::common::{ApiConfig, ExecutionEnvironment};
+use crate::common::{ApiConfig, ExecutionEnvironment, LogType};
 use crate::rest_api::RestApi;
 use lightstreamer_client::ls_client::{LightstreamerClient, Transport};
 use lightstreamer_client::subscription::Subscription;
@@ -63,6 +63,10 @@ impl StreamingApi {
         let api_config = config.unwrap_or_else(|| ApiConfig::default());
         let auto_login = api_config.auto_login.unwrap_or(false);
         let max_connection_attempts = api_config.streaming_api_max_connection_attempts.unwrap_or(MAX_CONNECTION_ATTEMPTS);
+        let log_type = match api_config.logger {
+            LogType::StdLogs => lightstreamer_client::ls_client::LogType::StdLogs,
+            LogType::TracingLogs => lightstreamer_client::ls_client::LogType::TracingLogs,
+        };
         //
         // Connect to REST API and authenticate.
         //
@@ -114,6 +118,8 @@ impl StreamingApi {
             .connection_options
             .set_forced_transport(Some(Transport::WsStreaming));
 
+        ls_client.set_logging_type(log_type);
+        
         Ok(Self {
             ls_client,
             max_connection_attempts,
