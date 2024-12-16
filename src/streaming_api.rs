@@ -1,11 +1,12 @@
 use crate::common::{ApiConfig, ExecutionEnvironment, LogType};
 use crate::rest_api::RestApi;
-use lightstreamer_client::ls_client::{LightstreamerClient, Transport};
+use lightstreamer_client::ls_client::{LightstreamerClient, SubscriptionRequest, Transport};
 use lightstreamer_client::subscription::Subscription;
 use signal_hook::low_level::signal_name;
 use signal_hook::{consts::SIGINT, consts::SIGTERM, iterator::Signals};
 use std::error::Error;
 use std::sync::Arc;
+use tokio::sync::mpsc::Sender;
 use tokio::sync::Notify;
 
 const MAX_CONNECTION_ATTEMPTS: u64 = 1;
@@ -13,6 +14,7 @@ const MAX_CONNECTION_ATTEMPTS: u64 = 1;
 pub struct StreamingApi {
     ls_client: LightstreamerClient,
     max_connection_attempts: u64,
+    pub subscription_sender: Sender<SubscriptionRequest>,
 }
 
 impl StreamingApi {
@@ -111,7 +113,7 @@ impl StreamingApi {
         )?;
 
         for subscription in subscriptions {
-            ls_client.subscribe(subscription);
+            LightstreamerClient::subscribe(ls_client.subscription_sender.clone(), subscription);
         }
 
         ls_client
@@ -120,9 +122,12 @@ impl StreamingApi {
 
         ls_client.set_logging_type(log_type);
         
+        let subscription_sender = ls_client.subscription_sender.clone();
+        
         Ok(Self {
             ls_client,
             max_connection_attempts,
+            subscription_sender,
         })
     }
 
@@ -201,5 +206,17 @@ impl StreamingApi {
                 break;
             }
         });
+    }
+    
+    pub fn subscribe(subscription_sender: Sender<SubscriptionRequest> , subscription: Subscription) {
+        LightstreamerClient::subscribe(subscription_sender, subscription);
+    }
+    
+    pub async fn subscribe_get_id(subscription_sender: Sender<SubscriptionRequest> , subscription: Subscription) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        LightstreamerClient::subscribe_get_id(subscription_sender, subscription).await
+    }
+    
+    pub fn unsubscribe(subscription_sender: Sender<SubscriptionRequest> , subscription_id: usize) {
+        LightstreamerClient::unsubscribe(subscription_sender, subscription_id);
     }
 }
