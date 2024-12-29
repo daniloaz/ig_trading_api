@@ -1283,11 +1283,11 @@ impl ValidateRequest for MarketsGetRequest {
             }));
         }
 
-        // Constraint: Pattern(regexp="^(?>(?:[A-Za-z0-9._]){6,30},?){0,200}$").
+        // Constraint: Pattern(regexp="^([A-Z]+(?:\.[A-Z]+)*(?:,[A-Z]+(?:\.[A-Z]+)*)*)$").
         let serialized_epics = self.epics.join(",");
         if !EPICS_REGEX.is_match(&serialized_epics) {
             return Err(Box::new(ApiError {
-                message: "Epic field is invalid.".to_string(),
+                message: format!("Epics field is invalid. Fields: {}", serialized_epics),
             }));
         }
 
@@ -1297,6 +1297,7 @@ impl ValidateRequest for MarketsGetRequest {
 
 /// Response to the GET /markets request.
 #[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MarketsGetResponse {
     /// Market details.
     pub market_details: Vec<MarketDetails>,

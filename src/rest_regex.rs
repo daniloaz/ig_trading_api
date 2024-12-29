@@ -20,7 +20,7 @@ pub static EPIC_REGEX: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"^[A-Za-z0-9._]{6,30}$").expect("Invalid regex pattern EPIC_REGEX!"));
 
 pub static EPICS_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^(?>(?:[A-Za-z0-9._]){6,30},?){0,200}$")
+    Regex::new(r"^([A-Z]+(?:\.[A-Z]+)*(?:,[A-Z]+(?:\.[A-Z]+)*)*)$")
         .expect("Invalid regex pattern EPICS_REGEX!")
 });
 

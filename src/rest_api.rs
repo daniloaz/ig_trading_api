@@ -182,6 +182,22 @@ impl RestApi {
 
         Ok((headers, markets))
     }
+    
+    /// Returns the details of the given market.
+    pub async fn markets_get(
+        &self,
+        request: MarketsGetRequest
+    ) -> Result<(Value, MarketsGetResponse), Box<dyn Error>> {
+        let (header_map, response_value) = self.client.get("markets".to_string(), Some(2), &Some(request)).await?;
+        
+        // convert the header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+        
+        // Convert the serde_json::Value response to MarketsGetResponse model.
+        let markets_response = MarketsGetResponse::from_value(&response_value)?;
+        
+        Ok((headers, markets_response))
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     //
