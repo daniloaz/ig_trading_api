@@ -305,7 +305,7 @@ pub struct Account {
 }
 
 /// Account status.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AccountStatus {
     /// Disabled account.
@@ -317,7 +317,7 @@ pub enum AccountStatus {
 }
 
 /// Account type.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AccountType {
     /// CFD account.
@@ -870,7 +870,7 @@ pub enum ActivityType {
 }
 
 /// Deal direction.
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Direction {
     /// Buy.
@@ -1283,11 +1283,11 @@ impl ValidateRequest for MarketsGetRequest {
             }));
         }
 
-        // Constraint: Pattern(regexp="^(?>(?:[A-Za-z0-9._]){6,30},?){0,200}$").
+        // Constraint: Pattern(regexp="^([A-Z]+(?:\.[A-Z]+)*(?:,[A-Z]+(?:\.[A-Z]+)*)*)$").
         let serialized_epics = self.epics.join(",");
         if !EPICS_REGEX.is_match(&serialized_epics) {
             return Err(Box::new(ApiError {
-                message: "Epic field is invalid.".to_string(),
+                message: format!("Epics field is invalid. Fields: {}", serialized_epics),
             }));
         }
 
@@ -1297,6 +1297,7 @@ impl ValidateRequest for MarketsGetRequest {
 
 /// Response to the GET /markets request.
 #[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MarketsGetResponse {
     /// Market details.
     pub market_details: Vec<MarketDetails>,
@@ -1446,7 +1447,7 @@ pub struct MarketData {
 }
 
 /// Describes the current status of a given market.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum MarketStatus {
     // Closed.
