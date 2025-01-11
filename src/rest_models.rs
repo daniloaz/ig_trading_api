@@ -870,7 +870,7 @@ pub enum ActivityType {
 }
 
 /// Deal direction.
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Direction {
     /// Buy.
@@ -1447,7 +1447,7 @@ pub struct MarketData {
 }
 
 /// Describes the current status of a given market.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum MarketStatus {
     // Closed.
