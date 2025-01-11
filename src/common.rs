@@ -76,6 +76,8 @@ pub struct ApiConfig {
     pub base_url_live: String,
     /// The execution environment (DEMO or LIVE).
     pub execution_environment: ExecutionEnvironment,
+    /// Logging mechanism
+    pub logger: LogType,
     /// Your user password.
     pub password: String,
     /// The session version to use for login requests.
@@ -84,8 +86,6 @@ pub struct ApiConfig {
     pub streaming_api_max_connection_attempts: Option<u64>,
     /// Your username.
     pub username: String,
-    /// Logging mechanism
-    pub logger: LogType,
 }
 
 // Default constructor for ApiConfig
@@ -100,11 +100,11 @@ impl ApiConfig {
             base_url_demo: "".to_string(),
             base_url_live: "".to_string(),
             execution_environment: ExecutionEnvironment::Demo,
+            logger: LogType::StdLogs,
             password: "".to_string(),
             session_version: None,
             streaming_api_max_connection_attempts: None,
             username: "".to_string(),
-            logger: LogType::StdLogs,
         }
     }
 }

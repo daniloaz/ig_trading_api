@@ -417,7 +417,7 @@ impl RestClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::common::{ApiConfig, ExecutionEnvironment};
+    use crate::common::{ApiConfig, ExecutionEnvironment, LogType};
 
     #[tokio::test]
     async fn new_rest_client_works() {
@@ -428,12 +428,13 @@ mod tests {
             account_number_test: None,
             api_key: "test_api_key".to_string(),
             auto_login: Some(false),
-            execution_environment: ExecutionEnvironment::Demo,
             base_url_demo: "https://demo.example.com".to_string(),
             base_url_live: "https://live.example.com".to_string(),
+            execution_environment: ExecutionEnvironment::Demo,
+            logger: LogType::StdLogs,
+            password: "test_password".to_string(),
             session_version: Some(2),
             streaming_api_max_connection_attempts: None,
-            password: "test_password".to_string(),
             username: "test_username".to_string(),
         };
 
