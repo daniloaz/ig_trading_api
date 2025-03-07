@@ -2698,3 +2698,42 @@ pub enum WorkingOrderTimeInForce {
     /// Good until specified date.
     GoodTillDate,
 }
+
+#[derive(Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PricesGetRequest {
+    pub resolution: Option<Resolution>,
+    pub from: Option<NaiveDateTime>,
+    pub to: Option<NaiveDateTime>,
+    pub max: Option<u32>,
+    pub page_size: Option<u32>,
+    pub page_number: Option<u32>,
+}
+
+impl ValidateRequest for PricesGetRequest {
+    fn validate(&self) -> Result<(), Box<dyn Error>> {
+
+        match (self.from, self.to) {
+            (Some(from), Some(to)) => {
+                if to < from {
+                    return Err(Box::new(ApiError {
+                        message: "End date cannot be before start date".to_string(),
+                    }));
+                }
+            }
+            _ => {}
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PricesGetResponse {
+    pub metadata: PriceMetadata,
+    pub instrument_type: InstrumentType,
+    pub prices: Vec<Price>
+}
+
+impl ValidateResponse for PricesGetResponse {}
