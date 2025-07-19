@@ -8,6 +8,7 @@ use std::error::Error;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 use tokio::sync::Notify;
+use tracing::{debug, error, info, trace, warn, Level};
 
 const MAX_CONNECTION_ATTEMPTS: u64 = 1;
 
@@ -15,6 +16,7 @@ pub struct StreamingApi {
     ls_client: LightstreamerClient,
     max_connection_attempts: u64,
     pub subscription_sender: Sender<SubscriptionRequest>,
+    log_type: LogType,
 }
 
 impl StreamingApi {
@@ -22,7 +24,7 @@ impl StreamingApi {
         // Create a new Notify instance to send a shutdown signal to the signal handler thread.
         let shutdown_signal = Arc::new(tokio::sync::Notify::new());
         // Spawn a new thread to handle SIGINT and SIGTERM process signals.
-        StreamingApi::setup_signal_hook(Arc::clone(&shutdown_signal)).await;
+        StreamingApi::setup_signal_hook(Arc::clone(&shutdown_signal), self.log_type.clone()).await;
         //
         // Infinite loop that will indefinitely retry failed connections unless
         // a SIGTERM or SIGINT signal is received.
@@ -36,25 +38,22 @@ impl StreamingApi {
                     break;
                 }
                 Err(e) => {
-                    println!("Failed to connect: {:?}", e);
+                    self.make_log(Level::ERROR, &format!("Failed to connect: {:?}", e));
                     tokio::time::sleep(std::time::Duration::from_millis(retry_interval_milis)).await;
                     retry_interval_milis = (retry_interval_milis + (200 * retry_counter)).min(5000);
                     retry_counter += 1;
-                    println!(
-                        "Retrying connection in {} seconds...",
-                        format!("{:.2}", retry_interval_milis as f64 / 1000.0)
-                    );
+                    self.make_log(Level::INFO, &format!("Retrying connection in {:.2}  seconds...", retry_interval_milis as f64 / 1000.0));
                 }
             }
         }
 
         if retry_counter == self.max_connection_attempts {
-            println!(
-                "Failed to connect after {} retries. Exiting...",
-                retry_counter
+            self.make_log(
+                Level::ERROR,
+                &format!("Failed to connect after {} retries. Exiting...", retry_counter)
             );
         } else {
-            println!("Exiting orderly from Lightstreamer client...");
+            self.make_log(Level::INFO, "Exiting orderly from Lightstreamer client...");
         }
     }
 
@@ -65,7 +64,8 @@ impl StreamingApi {
         let api_config = config.unwrap_or_else(|| ApiConfig::default());
         let auto_login = api_config.auto_login.unwrap_or(false);
         let max_connection_attempts = api_config.streaming_api_max_connection_attempts.unwrap_or(MAX_CONNECTION_ATTEMPTS);
-        let log_type = match api_config.logger {
+        let api_log_type = api_config.logger.clone();
+        let ls_client_log_type = match api_log_type {
             LogType::StdLogs => lightstreamer_client::ls_client::LogType::StdLogs,
             LogType::TracingLogs => lightstreamer_client::ls_client::LogType::TracingLogs,
         };
@@ -120,7 +120,7 @@ impl StreamingApi {
             .connection_options
             .set_forced_transport(Some(Transport::WsStreaming));
 
-        ls_client.set_logging_type(log_type);
+        ls_client.set_logging_type(ls_client_log_type);
         
         let subscription_sender = ls_client.subscription_sender.clone();
         
@@ -128,6 +128,7 @@ impl StreamingApi {
             ls_client,
             max_connection_attempts,
             subscription_sender,
+            log_type: api_log_type,
         })
     }
 
@@ -193,7 +194,7 @@ impl StreamingApi {
     ///
     /// The function panics if it fails to create the signal iterator.
     ///
-    async fn setup_signal_hook(shutdown_signal: Arc<Notify>) {
+    async fn setup_signal_hook(shutdown_signal: Arc<Notify>, log_type: LogType) {
         // Create a signal set of signals to be handled and a signal iterator to monitor them.
         let signals = &[SIGINT, SIGTERM];
         let mut signals_iterator = Signals::new(signals).expect("Failed to create signal iterator");
@@ -201,7 +202,7 @@ impl StreamingApi {
         // Create a new thread to handle signals sent to the process
         tokio::spawn(async move {
             for signal in signals_iterator.forever() {
-                println!("Received signal: {}", signal_name(signal).unwrap());
+                Self::log_msg(&log_type, Level::INFO, &format!("Received signal: {}", signal_name(signal).unwrap()));
                 let _ = shutdown_signal.notify_one();
                 break;
             }
@@ -218,5 +219,41 @@ impl StreamingApi {
     
     pub fn unsubscribe(subscription_sender: Sender<SubscriptionRequest> , subscription_id: usize) {
         LightstreamerClient::unsubscribe(subscription_sender, subscription_id);
+    }
+
+    pub fn make_log(&mut self, loglevel: Level, log: &str) {
+        Self::log_msg(&self.log_type, loglevel, log);
+    }
+
+    /// Function for logging messages
+    ///
+    /// Match case wraps log types. `loglevel` param ignored in StdLogs case, all output to stdout.
+    ///
+    /// # Parameters
+    ///
+    /// * `log_type` Enum determining use of stdout or Tracing subscriber.
+    pub fn log_msg(log_type: &LogType, loglevel: Level, log: &str) {
+       match log_type {
+            LogType::StdLogs => {
+                println!("{}", log);
+            }
+            LogType::TracingLogs => match loglevel {
+                Level::INFO => {
+                    info!(log);
+                }
+                Level::WARN => {
+                    warn!(log);
+                }
+                Level::ERROR => {
+                    error!(log);
+                }
+                Level::TRACE => {
+                    trace!(log);
+                }
+                Level::DEBUG => {
+                    debug!(log);
+                }
+            },
+        }
     }
 }
