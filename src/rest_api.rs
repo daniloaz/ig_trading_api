@@ -545,4 +545,31 @@ impl RestApi {
 
         Ok((headers, working_orders))
     }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //
+    // PRICES
+    //
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    pub async fn prices_get(
+        &self,
+        epic: &str,
+        body: PricesGetRequest,
+    ) -> Result<(Value, PricesGetResponse), Box<dyn Error>> {
+        // Validate the body.
+        body.validate()?;
+
+        let url = format!("prices/{}", epic);
+
+        // Send the request to the REST client.
+        let (header_map, response_value) = self.client.get(url, Some(3), &Some(body)).await?;
+
+        // Convert header_map to json.
+        let headers: Value = headers_to_json(&header_map)?;
+        // Deserialize the response_value to WorkingOrdersPutResponse.
+        let prices = PricesGetResponse::from_value(&response_value)?;
+
+        Ok((headers, prices))
+    }
 }
