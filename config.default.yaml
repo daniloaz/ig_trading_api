@@ -1,20 +1,18 @@
 #
-# IMPORTANT: these configuration is only used for integration and unit testing purposes.
-# It should be overriden by your own application when using this library.
+# IG Trading API - Application Configuration
+# This file contains only non-sensitive configuration settings.
+# All credentials and secrets should be in the .env file!
 #
 
 ig_trading_api:
-  account_number_demo: "XXXXX"
-  account_number_live: "XXXXX"
-  # Only required for put_session_works integraton test. It must be associated
-  # to the same running environment as the main account number.
-  account_number_test: "XXXXX"
-  api_key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  # Automatically log in to the API on instantiation and when the session expires
   auto_login: true
-  base_url_demo: "https://demo-api.ig.com/gateway/deal"
-  base_url_live: "https://api.ig.com/gateway/deal"
-  execution_environment: "DEMO" # LIVE / DEMO
+  
+  # Logging mechanism (StdLogs or TracingLogs)
   logger: "StdLogs"
-  password: "your_password"
+  
+  # Session version to use for login requests
   session_version: 2
-  username: "your_username"
+  
+  # Maximum number of connection attempts for the streaming API
+  streaming_api_max_connection_attempts: 3

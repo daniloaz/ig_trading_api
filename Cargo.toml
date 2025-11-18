@@ -1,6 +1,6 @@
 [package]
 name = "ig_trading_api"
-version = "0.2.3"
+version = "0.3.0"
 edition = "2021"
 authors = ["Daniel López Azaña <daniloaz@gmail.com>"]
 description = "A Rust client for the REST and Streaming APIs from IG.com."
@@ -14,6 +14,7 @@ documentation = "https://github.com/daniloaz/ig-trading-api#readme"
 [dependencies]
 base64 = "0"
 colored = "2"
+dotenvy = "0"
 lightstreamer-client = "0"
 chrono = { version = "0", features = ["serde"] }
 once_cell = "1"
