@@ -1121,3 +1121,33 @@ async fn zzz_session_delete_works() {
 
     sleep();
 }
+
+/// Force this test to run last by using zzz_ prefix to ensure the session
+/// is not deleted before running other tests.
+#[tokio::test]
+async fn prices_get_works() {
+    // Get the API instance.
+    let api = get_or_init_rest_api().await;
+
+    let response = match api.prices_get("IX.D.FTSE.IFM.IP", PricesGetRequest {
+        resolution: None,
+        from: None,
+        to: None,
+        max: None,
+        page_size: None,
+        page_number: None,
+    }).await {
+        Ok(response) => response,
+        Err(e) => {
+            println!("Error getting session details: {:?}", e);
+            panic!("Test failed due to error.");
+        }
+    };
+
+    println!(
+        "Response headers: {}",
+        serde_json::to_string_pretty(&response.0).unwrap()
+    );
+
+    sleep();
+}
